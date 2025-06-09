@@ -1,5 +1,5 @@
 {
-  "name": "template-workspace",
+  "name": "mati-workspace",
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
@@ -10,15 +10,15 @@
     "ci": "ng lint && ng test && ng build",
     "format:test": "prettier --list-different \"./projects/**/*.{ts,html,scss,json}\"",
     "format:write": "prettier --write \"./projects/**/*.{ts,html,scss,json}\"",
-    "analyze": "ng build --stats-json --output-hashing=none --named-chunks && esbuild-visualizer --template treemap --metadata dist/template/stats.json --filename dist/template/analyse/index.html  && http-server -o -c-1 ./dist/template/analyse/",
-    "analyze:sme": "ng build --source-map --output-hashing=none --named-chunks && source-map-explorer dist/template/browser/*.js --html dist/template/sme/index.html && http-server -o -c-1 ./dist/template/sme/",
+    "analyze": "ng build --stats-json --output-hashing=none --named-chunks && esbuild-visualizer --template treemap --metadata dist/mati/stats.json --filename dist/mati/analyse/index.html  && http-server -o -c-1 ./dist/mati/analyse/",
+    "analyze:sme": "ng build --source-map --output-hashing=none --named-chunks && source-map-explorer dist/mati/browser/*.js --html dist/mati/sme/index.html && http-server -o -c-1 ./dist/mati/sme/",
     "analyze:deps": "npm-run-all analyze:deps:*",
-    "analyze:deps:all": "madge projects/template/src/main.ts --ts-config tsconfig.json --image ./deps/template/_all.png",
-    "analyze:deps:ui": "madge  --extensions ts --ts-config tsconfig.json --image ./deps/template/ui.png projects/template/src/app/ui/",
-    "analyze:deps:pattern": "madge  --extensions ts --ts-config tsconfig.json --image ./deps/template/pattern.png projects/template/src/app/pattern/",
-    "analyze:deps:feature": "madge  --extensions ts --ts-config tsconfig.json --image ./deps/template/feature.png projects/template/src/app/feature/",
-    "analyze:deps:layout": "madge  --extensions ts --ts-config tsconfig.json --image ./deps/template/layout.png projects/template/src/app/layout/",
-    "analyze:deps:core": "madge  --extensions ts --ts-config tsconfig.json --image ./deps/template/core.png projects/template/src/app/core/"
+    "analyze:deps:all": "madge projects/mati/src/main.ts --ts-config tsconfig.json --image ./deps/mati/_all.png",
+    "analyze:deps:ui": "madge  --extensions ts --ts-config tsconfig.json --image ./deps/mati/ui.png projects/mati/src/app/ui/",
+    "analyze:deps:pattern": "madge  --extensions ts --ts-config tsconfig.json --image ./deps/mati/pattern.png projects/mati/src/app/pattern/",
+    "analyze:deps:feature": "madge  --extensions ts --ts-config tsconfig.json --image ./deps/mati/feature.png projects/mati/src/app/feature/",
+    "analyze:deps:layout": "madge  --extensions ts --ts-config tsconfig.json --image ./deps/mati/layout.png projects/mati/src/app/layout/",
+    "analyze:deps:core": "madge  --extensions ts --ts-config tsconfig.json --image ./deps/mati/core.png projects/mati/src/app/core/"
   },
   "private": true,
   "dependencies": {

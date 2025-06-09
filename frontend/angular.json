@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "template": {
+    "mati": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -13,23 +13,23 @@
           "style": "scss"
         }
       },
-      "root": "projects/template",
-      "sourceRoot": "projects/template/src",
+      "root": "projects/mati",
+      "sourceRoot": "projects/mati/src",
       "prefix": "hostiles",
       "architect": {
         "build": {
           "builder": "@angular/build:application",
           "options": {
-            "outputPath": "dist/template",
-            "index": "projects/template/src/index.html",
-            "browser": "projects/template/src/main.ts",
-            "tsConfig": "projects/template/tsconfig.app.json",
+            "outputPath": "dist/mati",
+            "index": "projects/mati/src/index.html",
+            "browser": "projects/mati/src/main.ts",
+            "tsConfig": "projects/mati/tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
-              "projects/template/src/favicon.ico",
-              "projects/template/src/assets"
+              "projects/mati/src/favicon.ico",
+              "projects/mati/src/assets"
             ],
-            "styles": ["projects/template/src/styles.scss"],
+            "styles": ["projects/mati/src/styles.scss"],
             "scripts": []
           },
           "configurations": {
@@ -60,10 +60,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "template:build:production"
+              "buildTarget": "mati:build:production"
             },
             "development": {
-              "buildTarget": "template:build:development"
+              "buildTarget": "mati:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -71,19 +71,19 @@
         "extract-i18n": {
           "builder": "@angular/build:extract-i18n",
           "options": {
-            "buildTarget": "template:build"
+            "buildTarget": "mati:build"
           }
         },
         "test": {
           "builder": "@angular/build:karma",
           "options": {
-            "tsConfig": "projects/template/tsconfig.spec.json",
+            "tsConfig": "projects/mati/tsconfig.spec.json",
             "inlineStyleLanguage": "scss",
             "assets": [
-              "projects/template/src/favicon.ico",
-              "projects/template/src/assets"
+              "projects/mati/src/favicon.ico",
+              "projects/mati/src/assets"
             ],
-            "styles": ["projects/template/src/styles.scss"],
+            "styles": ["projects/mati/src/styles.scss"],
             "scripts": []
           }
         },
@@ -91,8 +91,8 @@
           "builder": "@angular-eslint/builder:lint",
           "options": {
             "lintFilePatterns": [
-              "projects/template/**/*.ts",
-              "projects/template/**/*.html"
+              "projects/mati/**/*.ts",
+              "projects/mati/**/*.html"
             ]
           }
         }
