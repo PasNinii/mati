@@ -4,6 +4,7 @@ import {
   ElementRef,
   linkedSignal,
   OnDestroy,
+  OnInit,
   signal,
   untracked,
   viewChild,
@@ -17,6 +18,7 @@ import Konva from 'konva';
 
 @Component({
   selector: 'hostiles-tactical-board',
+  standalone: true,
   imports: [
     FormsModule,
     ReactiveFormsModule,
@@ -35,13 +37,15 @@ import Konva from 'konva';
           @for (input of [pixelsPerMeter, height, width]; track input) {
             @switch (input) {
               @case (pixelsPerMeter) {
-                <label>Pixels per meter: {{ pixelsPerMeter() }}</label>
+                <label for="pixelsPerMeter"
+                  >Pixels per meter: {{ pixelsPerMeter() }}</label
+                >
               }
               @case (height) {
-                <label>Height (meters): {{ height() }}</label>
+                <label for="height">Height (meters): {{ height() }}</label>
               }
               @case (width) {
-                <label>Width (meters): {{ width() }}</label>
+                <label for="width">Width (meters): {{ width() }}</label>
               }
             }
 
@@ -112,7 +116,7 @@ import Konva from 'konva';
     `,
   ],
 })
-export class TacticalBoardComponent implements OnDestroy {
+export class TacticalBoardComponent implements OnInit, OnDestroy {
   protected readonly konvaContainer =
     viewChild.required<ElementRef<HTMLDivElement>>('konvaContainer');
 

@@ -5,7 +5,8 @@ export const routes: Routes = [
   {
     path: 'tactical-board',
     title: 'Tactical Board',
-    loadChildren: () => import('./feature/tactical-board/tactical.routes'),
+    loadChildren: () =>
+      import('./feature/tactical-board/tactical-board.routes'),
   },
   { path: '**', redirectTo: '' },
 ];
