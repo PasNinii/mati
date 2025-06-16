@@ -4,7 +4,6 @@ import {
   ElementRef,
   linkedSignal,
   OnDestroy,
-  OnInit,
   signal,
   untracked,
   viewChild,
@@ -74,33 +73,12 @@ import Konva from 'konva';
         padding: 16px;
       }
 
-      .controls-card {
-        background-color: #f8f8f8;
-        border-radius: 8px;
-      }
-
       .controls-content {
         display: flex;
         flex-wrap: wrap;
         gap: 16px;
         padding: 8px;
         align-items: center;
-      }
-
-      mat-form-field {
-        min-width: 150px;
-        flex: 1;
-      }
-
-      .slider-container {
-        display: flex;
-        flex-direction: column;
-        min-width: 200px;
-        flex: 2;
-      }
-
-      .full-width {
-        width: 100%;
       }
 
       .konva-container {
@@ -116,7 +94,7 @@ import Konva from 'konva';
     `,
   ],
 })
-export class TacticalBoardComponent implements OnInit, OnDestroy {
+export class TacticalBoardComponent implements OnDestroy {
   protected readonly konvaContainer =
     viewChild.required<ElementRef<HTMLDivElement>>('konvaContainer');
 
@@ -144,7 +122,7 @@ export class TacticalBoardComponent implements OnInit, OnDestroy {
         this.pixelsPerMeter(),
         this.height(),
         this.width(),
-        this.hasBeenInitialized(),
+        this.konvaContainer(),
       ];
 
       untracked(() => {
@@ -152,11 +130,6 @@ export class TacticalBoardComponent implements OnInit, OnDestroy {
         this.createBasicShapes();
       });
     });
-  }
-
-  ngOnInit() {
-    this.pixelsPerMeter.set(20);
-    this.hasBeenInitialized.set(true);
   }
 
   ngOnDestroy() {
