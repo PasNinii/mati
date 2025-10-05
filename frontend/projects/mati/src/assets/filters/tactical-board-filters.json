@@ -1,0 +1,41 @@
+[
+  {
+    "id": "court",
+    "name": "Court Configuration",
+    "filters": [
+      {
+        "id": "courtHeight",
+        "label": "Court Height (m)",
+        "type": "slider",
+        "min": 30,
+        "max": 60,
+        "defaultValue": 40,
+        "clearable": false
+      }
+    ]
+  },
+  {
+    "id": "players",
+    "name": "Player Settings",
+    "filters": [
+      {
+        "id": "showCoordinates",
+        "label": "Show Player Coordinates",
+        "type": "boolean",
+        "defaultValue": true
+      }
+    ]
+  },
+  {
+    "id": "display",
+    "name": "Display Options",
+    "filters": [
+      {
+        "id": "showBall",
+        "label": "Show Ball",
+        "type": "boolean",
+        "defaultValue": true
+      }
+    ]
+  }
+]

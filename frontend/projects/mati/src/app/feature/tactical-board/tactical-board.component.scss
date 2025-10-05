@@ -117,7 +117,7 @@
 
 // Settings drawer
 .settings-drawer {
-  width: 400px;
+  width: 450px;
   border-left: 1px solid var(--drawer-border);
   background: var(--drawer-bg);
   transition:
@@ -126,11 +126,63 @@
 
   @media (max-width: 768px) {
     width: 90vw;
-    max-width: 400px;
+    max-width: 450px;
   }
 }
 
-// Controls card
+// Drawer content container
+.drawer-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  overflow-y: auto;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 4px;
+    transition: background 0.3s ease;
+
+    &:hover {
+      background: var(--scrollbar-thumb-hover);
+    }
+  }
+}
+
+.drawer-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 0.5rem 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--drawer-border);
+}
+
+// Actions card (for buttons and info)
+.actions-card {
+  background: var(--panel-bg);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px var(--panel-shadow);
+  transition: all 0.3s ease;
+
+  mat-card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+  }
+}
+
+// Controls card (legacy support)
 .controls-card {
   height: 100%;
   border-radius: 0;
@@ -391,28 +443,5 @@ mat-expansion-panel {
 
   .settings-content {
     padding: 16px;
-  }
-}
-
-// Theme toggle button (optional - can be added to the template)
-.theme-toggle-btn {
-  position: absolute;
-  top: 24px;
-  left: 24px;
-  z-index: 1000;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
-  &:hover {
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
-    transform: translateY(-2px);
-  }
-
-  mat-icon {
-    transition: transform 0.3s ease;
-  }
-
-  &:hover mat-icon {
-    transform: rotate(180deg);
   }
 }

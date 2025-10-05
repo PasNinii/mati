@@ -1,3 +1,4 @@
+import { provideHttpClient } from '@angular/common/http';
 import {
   provideAppInitializer,
   provideZonelessChangeDetection,
@@ -10,6 +11,7 @@ import {
   withInMemoryScrolling,
   withRouterConfig,
 } from '@angular/router';
+import { ThemeService } from './services/theme.service';
 
 export interface CoreOptions {
   routes: Routes;
@@ -28,6 +30,8 @@ export function provideCore({ routes }: CoreOptions) {
         scrollPositionRestoration: 'enabled',
       }),
     ),
+    provideHttpClient(),
+    ThemeService,
     provideAppInitializer(() => {
       // init app logic
     }),
