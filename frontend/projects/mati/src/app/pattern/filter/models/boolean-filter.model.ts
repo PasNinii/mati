@@ -39,17 +39,13 @@ export class BooleanFilter extends BaseFilter<boolean> {
   /**
    * Initialize shortcuts for boolean filter
    */
-  override initShortcuts(
-    shortcutService: {
-      register: (shortcut: string, handler: () => void) => () => void;
-    },
-    onUpdate: () => void,
-  ): void {
+  override initShortcuts(shortcutService: {
+    register: (shortcut: string, handler: () => void) => () => void;
+  }): void {
     const cfg = this.config();
     if (cfg.shortcut) {
       this.registerShortcut(shortcutService, cfg.shortcut, () => {
         this.toggle();
-        onUpdate();
       });
     }
   }

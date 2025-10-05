@@ -1,6 +1,7 @@
 import { signal, Signal, WritableSignal, Type } from '@angular/core';
 import { FilterConfig } from '../filter-config.interface';
 import { FilterType } from '../filter-type.enum';
+import { BaseFilterComponent } from '../../../ui/filters';
 
 /**
  * Abstract base class for all filter types
@@ -16,9 +17,7 @@ export abstract class BaseFilter<T = unknown> {
   public readonly value: WritableSignal<T>;
 
   // Component to render this filter - defined by subclasses
-  public abstract readonly component: Type<any>;
-
-  private shortcutCleanup?: () => void;
+  public abstract readonly component: Type<BaseFilterComponent>;
 
   constructor(config: FilterConfig) {
     this.config = signal(config);
@@ -29,12 +28,9 @@ export abstract class BaseFilter<T = unknown> {
    * Initialize keyboard shortcuts for this filter
    * Subclasses must implement this to register their shortcuts
    */
-  abstract initShortcuts(
-    shortcutService: {
-      register: (shortcut: string, handler: () => void) => () => void;
-    },
-    onUpdate: () => void,
-  ): void;
+  public abstract initShortcuts(shortcutService: {
+    register: (shortcut: string, handler: () => void) => () => void;
+  }): void;
 
   /**
    * Helper to register a shortcut and store cleanup
@@ -46,21 +42,7 @@ export abstract class BaseFilter<T = unknown> {
     shortcut: string,
     handler: () => void,
   ): void {
-    const cleanup = service.register(shortcut, handler);
-
-    // Chain cleanups if multiple shortcuts
-    const previousCleanup = this.shortcutCleanup;
-    this.shortcutCleanup = () => {
-      cleanup();
-      previousCleanup?.();
-    };
-  }
-
-  /**
-   * Cleanup shortcuts when filter is destroyed
-   */
-  destroy(): void {
-    this.shortcutCleanup?.();
+    service.register(shortcut, handler);
   }
 
   /**
@@ -70,17 +52,6 @@ export abstract class BaseFilter<T = unknown> {
     return this.config().id;
   }
 
-  get label(): string {
-    return this.config().label;
-  }
-
-  get type(): FilterType {
-    return this.config().type;
-  }
-
-  /**
-   * Get the default value for this filter based on config
-   */
   protected getDefaultValue(): T {
     const cfg = this.config();
     return (cfg.defaultValue ?? this.getTypeDefaultValue()) as T;
@@ -137,14 +108,4 @@ export abstract class BaseFilter<T = unknown> {
    * @param value - The string value to deserialize
    */
   abstract deserialize(value: string): void;
-
-  /**
-   * Convert filter to JSON representation
-   */
-  toJSON(): { id: string; value: T } {
-    return {
-      id: this.id,
-      value: this.value(),
-    };
-  }
 }

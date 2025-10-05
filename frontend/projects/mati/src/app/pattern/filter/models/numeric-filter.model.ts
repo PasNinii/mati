@@ -53,25 +53,20 @@ export class NumericFilter extends BaseFilter<number> {
   /**
    * Initialize shortcuts for numeric filter
    */
-  override initShortcuts(
-    shortcutService: {
-      register: (shortcut: string, handler: () => void) => () => void;
-    },
-    onUpdate: () => void,
-  ): void {
+  override initShortcuts(shortcutService: {
+    register: (shortcut: string, handler: () => void) => () => void;
+  }): void {
     const cfg = this.config();
 
     if (cfg.shortcuts?.increment) {
       this.registerShortcut(shortcutService, cfg.shortcuts.increment, () => {
         this.increment();
-        onUpdate();
       });
     }
 
     if (cfg.shortcuts?.decrement) {
       this.registerShortcut(shortcutService, cfg.shortcuts.decrement, () => {
         this.decrement();
-        onUpdate();
       });
     }
   }

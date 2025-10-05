@@ -1,16 +1,8 @@
-import {
-  Injectable,
-  signal,
-  Signal,
-  computed,
-  effect,
-  inject,
-} from '@angular/core';
+import { Injectable, signal, computed, effect, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute, Params } from '@angular/router';
 import { Observable, map } from 'rxjs';
 import {
-  FilterConfig,
   FilterGroup,
   FilterGroupStructure,
   FilterState,
@@ -33,7 +25,6 @@ export class FilterService {
   // Simplified group structure - only contains structure for rendering, not full configs
   public readonly filterGroups = signal<FilterGroupStructure[]>([]);
 
-  // Computed signal for filter state (returns actual values, not serialized)
   public readonly filterState = computed<FilterState>(() => {
     const state: FilterState = {};
     this.filters().forEach((filter) => {
@@ -44,33 +35,22 @@ export class FilterService {
     return state;
   });
 
-  // Computed signal for active filters count
   public readonly activeFiltersCount = computed(
     () => Object.keys(this.filterState()).length,
   );
 
-  // Computed signal for checking if any filter is active
-  public readonly hasActiveFilters = computed(
-    () => this.activeFiltersCount() > 0,
-  );
-
   constructor() {
-    // Effect to sync filter state to URL in real-time
     effect(() => {
       const state = this.filterState();
       this.updateUrlParams(state);
     });
 
-    // Register global keyboard shortcut to clear all filters
-    this.keyboardShortcutService.register('ctrl+r', () => {
+    this.keyboardShortcutService.register('ctrl+a', () => {
       this.clearAllFilters();
     });
   }
 
-  /**
-   * Load filter configurations from JSON file
-   */
-  loadFilterConfigs(
+  public loadFilterConfigs(
     configPath: string = 'assets/filters/filter-config.json',
   ): Observable<FilterGroup[]> {
     return this.http.get<FilterGroup[]>(configPath).pipe(
@@ -81,9 +61,42 @@ export class FilterService {
     );
   }
 
-  /**
-   * Initialize filter instances from configurations
-   */
+  public clearAllFilters(): void {
+    this.filters().forEach((filter) => filter.clear());
+  }
+
+  public loadFiltersFromUrl(): void {
+    this.route.queryParams.subscribe((params) => {
+      Object.keys(params).forEach((key) => {
+        const filter = this.filters().get(key);
+        if (filter) {
+          filter.deserialize(params[key]);
+        }
+      });
+    });
+  }
+
+  private updateUrlParams(state: FilterState): void {
+    const queryParams: Params = {};
+
+    Object.keys(state).forEach((key) => {
+      const filter = this.filters().get(key);
+      if (filter) {
+        const serialized = filter.serialize();
+        if (serialized !== null) {
+          queryParams[key] = serialized;
+        }
+      }
+    });
+
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams,
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+
   private initializeFilters(groups: FilterGroup[]): void {
     const filterMap = new Map<string, BaseFilter>();
     const groupStructures: FilterGroupStructure[] = [];
@@ -92,16 +105,10 @@ export class FilterService {
       const filterIds: Array<{ id: string; type: FilterType }> = [];
 
       group.filters.forEach((config) => {
-        // Use factory to create appropriate filter type
         const filter = createFilter(config);
         filterMap.set(config.id, filter);
         filterIds.push({ id: config.id, type: config.type });
-
-        // Let each filter register its own shortcuts
-        filter.initShortcuts(this.keyboardShortcutService, () => {
-          // Trigger is handled by filter's value signal
-          // No need to update the map
-        });
+        filter.initShortcuts(this.keyboardShortcutService);
       });
 
       groupStructures.push({
@@ -113,64 +120,5 @@ export class FilterService {
 
     this.filters.set(filterMap);
     this.filterGroups.set(groupStructures);
-  }
-
-  /**
-   * Get a specific filter by ID
-   */
-  getFilter(filterId: string): BaseFilter | undefined {
-    return this.filters().get(filterId);
-  }
-
-  /**
-   * Update a filter's value
-   */
-  updateFilter(filterId: string, value: any): void {
-    const filter = this.getFilter(filterId);
-    if (filter) {
-      filter.value.set(value);
-      // No need to update the filters map as the value signal will trigger reactivity
-    }
-  }
-
-  public clearAllFilters(): void {
-    this.filters().forEach((filter) => filter.clear());
-  }
-
-  private updateUrlParams(state: FilterState): void {
-    const queryParams: any = {};
-
-    // Serialize filter values for URL
-    Object.entries(state).forEach(([key, value]) => {
-      const filter = this.getFilter(key);
-      if (filter) {
-        const serialized = filter.serialize();
-        if (serialized !== null) {
-          queryParams[key] = serialized;
-        }
-      }
-    });
-
-    // Update URL without reloading the page
-    this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams,
-      queryParamsHandling: 'merge',
-      replaceUrl: true,
-    });
-  }
-
-  public loadFiltersFromUrl(): void {
-    this.route.queryParams.subscribe((params) => {
-      // Load individual filter parameters
-      Object.keys(params).forEach((key) => {
-        const filter = this.getFilter(key);
-        if (filter) {
-          // Use the filter's deserialize method
-          filter.deserialize(params[key]);
-        }
-      });
-      // No need to update the filters map as the value signals will trigger reactivity
-    });
   }
 }
