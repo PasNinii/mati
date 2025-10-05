@@ -13,6 +13,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSliderModule } from '@angular/material/slider';
 import { MatCardModule } from '@angular/material/card';
+
 import Konva from 'konva';
 
 @Component({
@@ -148,6 +149,7 @@ export class TacticalBoardComponent implements OnDestroy {
   private createGrid() {
     const width = this.stage().width();
     const height = this.stage().height();
+    console.log('Creating court with dimensions:', width, height, 'pxPerM:', this.pixelsPerMeter());
     this.createHandballCourt(width, height);
   }
 
@@ -184,39 +186,193 @@ export class TacticalBoardComponent implements OnDestroy {
     pixelsPerMeter: number,
     isBottom: boolean,
   ) {
-    const sixMeterRadius = 6 * pixelsPerMeter;
-    const nineMeterRadius = 9 * pixelsPerMeter;
-    const rotation = isBottom ? 180 : 0;
+    const goalWidthM = 3; // Goal width in meters
+    const courtWidthM = this.width(); // Court width in meters
 
-    const baseZone = {
-      x: centerX,
-      y: yPosition,
-      angle: 180,
-      rotation: rotation,
-    };
-
-    // 6-meter zone
-    const sixMeterZone = new Konva.Arc({
-      ...baseZone,
-      innerRadius: sixMeterRadius,
-      outerRadius: sixMeterRadius,
-      fill: '#FFFFFF',
-      stroke: '#000000',
+    // Create 6m zone (solid line)
+    const sixMeterPath = this.buildZonePath(
+      centerX,
+      yPosition,
+      pixelsPerMeter,
+      goalWidthM,
+      courtWidthM,
+      6,
+      isBottom
+    );
+    console.log('6m path:', sixMeterPath);
+    const sixMeterZone = new Konva.Path({
+      data: sixMeterPath,
+      stroke: '#FF3333',
       strokeWidth: 3,
     });
     this.layer().add(sixMeterZone);
 
-    // 9-meter zone (dashed line)
-    const nineMeterZone = new Konva.Arc({
-      ...baseZone,
-      innerRadius: nineMeterRadius,
-      outerRadius: nineMeterRadius,
-      stroke: '#000000',
-      strokeWidth: 2,
-      dash: [this.pixelsPerMeter() * 0.5, this.pixelsPerMeter() / 2], // Creates a dashed line
-      fill: undefined,
+    // Create 9m zone (dashed line)
+    const nineMeterPath = this.buildZonePath(
+      centerX,
+      yPosition,
+      pixelsPerMeter,
+      goalWidthM,
+      courtWidthM,
+      9,
+      isBottom
+    );
+    console.log('9m path:', nineMeterPath);
+    const nineMeterZone = new Konva.Path({
+      data: nineMeterPath,
+      stroke: '#3333FF',
+      strokeWidth: 3,
+      dash: [8, 6],
     });
     this.layer().add(nineMeterZone);
+    
+    // Draw the goal line (3m wide, centered)
+    const halfGoalPx = (goalWidthM / 2) * pixelsPerMeter;
+    const goalLine = new Konva.Line({
+      points: [
+        centerX - halfGoalPx, yPosition,
+        centerX + halfGoalPx, yPosition
+      ],
+      stroke: '#000000',
+      strokeWidth: 4,
+    });
+    this.layer().add(goalLine);
+  }
+
+  /**
+   * Builds the SVG path for a zone (6m or 9m) using exact geometry.
+   * 
+   * Algorithm explanation:
+   * The handball zone is defined as all points at distance R from the nearest element:
+   * - The goal segment (3m wide, centered)
+   * - The goal line (entire width)
+   * 
+   * The resulting shape is composed of:
+   * 1. Two circular arcs (quarter circles) around each goal post
+   * 2. A straight line parallel to the goal line connecting the arcs
+   * 
+   * Construction:
+   * - Left arc: from horizontal left (-R from post) to vertical top (R from goal line)
+   * - Straight line: horizontally from left post to right post at distance R
+   * - Right arc: from vertical top to horizontal right (+R from post)
+   * 
+   * @param centerX X-coordinate of zone center in pixels
+   * @param yPosition Y-coordinate of goal line in pixels
+   * @param pxPerM Pixels per meter conversion factor
+   * @param goalWidthM Goal width in meters (3m)
+   * @param courtWidthM Court width in meters
+   * @param radiusM Zone radius in meters (6 or 9)
+   * @param isBottom Whether zone is at bottom (true) or top (false)
+   * @returns SVG path data string
+   */
+  private buildZonePath(
+    centerX: number,
+    yPosition: number,
+    pxPerM: number,
+    goalWidthM: number,
+    courtWidthM: number,
+    radiusM: number,
+    isBottom: boolean
+  ): string {
+    // Convert to pixels
+    const R = radiusM * pxPerM;
+    const halfGoal = (goalWidthM / 2) * pxPerM;
+    
+    // Direction multiplier for top vs bottom
+    const dir = isBottom ? 1 : -1;
+    
+    // Goal posts positions
+    const leftPostX = centerX - halfGoal;
+    const rightPostX = centerX + halfGoal;
+    
+    // Clear and simple approach: build path segment by segment
+    const points: {x: number, y: number}[] = [];
+    const numSegments = 100;
+    
+    // Key coordinates:
+    // Posts are at: (leftPostX, yPosition) and (rightPostX, yPosition)
+    // The zone always extends TOWARD THE CENTER of the field
+    // For top zone (yPosition=0): zone extends from 0 to +R (downward into field)
+    // For bottom zone (yPosition=height): zone extends from height to height-R (upward into field)
+    
+    // So both zones extend "inward" but in opposite Y directions
+    // Top zone: isBottom=false, yPosition=0, extend downward: yExtent = 0 + R
+    // Bottom zone: isBottom=true, yPosition=600, extend upward: yExtent = 600 - R
+    
+    const yExtent = isBottom ? yPosition - R : yPosition + R;
+    
+    // PART 1: Left quarter circle
+    // Center: (leftPostX, yPosition), Radius: R
+    // Start point: (leftPostX - R, yPosition) - leftmost point on goal line
+    // End point: (leftPostX, yExtent) - extends into the field
+    
+    for (let i = 0; i <= numSegments / 4; i++) {
+      const t = i / (numSegments / 4);
+      
+      if (isBottom) {
+        // Bottom zone at yPosition=600: extends UPWARD (decreasing Y)
+        // sweep from angle PI (left) to PI/2 (up)
+        const angle = Math.PI - t * (Math.PI / 2);
+        const x = leftPostX + R * Math.cos(angle);
+        const offsetY = R * Math.sin(angle); // 0 to R
+        const y = yPosition - offsetY; // Go upward (decrease Y)
+        points.push({x, y});
+      } else {
+        // Top zone at yPosition=0: extends DOWNWARD (increasing Y)
+        // sweep from angle PI (left) to 3*PI/2 (down)
+        const angle = Math.PI + t * (Math.PI / 2);
+        const x = leftPostX + R * Math.cos(angle);
+        const y = yPosition + R * Math.sin(angle);
+        points.push({x, y});
+      }
+    }
+    
+    // PART 2: Straight line at yExtent from left post to right post
+    for (let i = 1; i <= numSegments / 4; i++) {
+      const t = i / (numSegments / 4);
+      const x = leftPostX + t * (rightPostX - leftPostX);
+      points.push({x, y: yExtent});
+    }
+    
+    // PART 3: Right quarter circle
+    // Center: (rightPostX, yPosition), Radius: R
+    // Start point: (rightPostX, yExtent) - extends into the field
+    // End point: (rightPostX + R, yPosition) - rightmost point on goal line
+    
+    for (let i = 1; i <= numSegments / 4; i++) {
+      const t = i / (numSegments / 4);
+      
+      if (isBottom) {
+        // Bottom zone at yPosition=600: extends UPWARD (decreasing Y)
+        // sweep from angle PI/2 (up) to 0 (right)
+        const angle = Math.PI / 2 - t * (Math.PI / 2);
+        const x = rightPostX + R * Math.cos(angle);
+        const offsetY = R * Math.sin(angle); // R to 0
+        const y = yPosition - offsetY; // Go upward (decrease Y)
+        points.push({x, y});
+      } else {
+        // Top zone at yPosition=0: extends DOWNWARD (increasing Y)
+        // sweep from angle 3*PI/2 (down) to 2*PI (right)
+        const angle = 3 * Math.PI / 2 + t * (Math.PI / 2);
+        const x = rightPostX + R * Math.cos(angle);
+        const y = yPosition + R * Math.sin(angle);
+        points.push({x, y});
+      }
+    }
+    
+    // Build SVG path
+    if (points.length === 0) return '';
+    
+    let path = `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
+    for (let i = 1; i < points.length; i++) {
+      path += ` L ${points[i].x.toFixed(2)} ${points[i].y.toFixed(2)}`;
+    }
+    
+    console.log(`Zone ${radiusM}m (${isBottom ? 'bottom' : 'top'}): yPosition=${yPosition}, yExtent=${yExtent}, R=${R}px`);
+    console.log(`  First 3 points:`, points.slice(0, 3).map(p => `(${p.x.toFixed(0)},${p.y.toFixed(0)})`));
+    console.log(`  Last 3 points:`, points.slice(-3).map(p => `(${p.x.toFixed(0)},${p.y.toFixed(0)})`));
+    
+    return path;
   }
 
   private createMiddle(height: number, width: number, pixelsPerMeter: number) {

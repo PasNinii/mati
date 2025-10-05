@@ -2,7 +2,6 @@ import {
   provideAppInitializer,
   provideZonelessChangeDetection,
 } from '@angular/core';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import {
   Routes,
   provideRouter,
@@ -19,7 +18,6 @@ export interface CoreOptions {
 export function provideCore({ routes }: CoreOptions) {
   return [
     provideZonelessChangeDetection(),
-    provideAnimationsAsync(),
     provideRouter(
       routes,
       withRouterConfig({ onSameUrlNavigation: 'reload' }),
