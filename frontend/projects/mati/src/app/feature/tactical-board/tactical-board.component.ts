@@ -15,6 +15,9 @@ import { MatSliderModule } from '@angular/material/slider';
 import { MatCardModule } from '@angular/material/card';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 
 import Konva from 'konva';
 import {
@@ -36,70 +39,114 @@ import { HandballCourtRenderer } from './services/handball-court-renderer.servic
     MatCardModule,
     MatExpansionModule,
     MatCheckboxModule,
+    MatSidenavModule,
+    MatButtonModule,
+    MatIconModule,
   ],
   template: `
-    <div class="tactical-board-container">
-      <mat-card class="controls-card">
-        <mat-card-header>
-          <mat-card-title>Board Configuration</mat-card-title>
-        </mat-card-header>
-        <mat-card-content class="controls-content">
-          <mat-accordion class="full-width">
-            <mat-expansion-panel [expanded]="true">
-              <mat-expansion-panel-header>
-                <mat-panel-title>Court Settings</mat-panel-title>
-              </mat-expansion-panel-header>
+    <mat-drawer-container class="drawer-container" autosize>
+      <mat-drawer-content>
+        <div class="tactical-board-container">
+          <button
+            mat-fab
+            color="primary"
+            class="toggle-drawer-btn"
+            (click)="drawer.toggle()"
+            aria-label="Toggle settings"
+          >
+            <mat-icon>{{ drawer.opened ? 'close' : 'settings' }}</mat-icon>
+          </button>
 
-              <div class="settings-content">
-                <mat-checkbox [(ngModel)]="fullCourt" class="full-width">
-                  Draw Full Court (unchecked = half court - upper part only)
-                </mat-checkbox>
+          <div #konvaContainer class="konva-container"></div>
+        </div>
+      </mat-drawer-content>
 
-                @for (input of [pixelsPerMeter, height, width]; track input) {
-                  <div class="slider-group">
-                    @switch (input) {
-                      @case (pixelsPerMeter) {
-                        <label for="pixelsPerMeter"
-                          >Pixels per meter: {{ pixelsPerMeter() }}</label
-                        >
+      <mat-drawer #drawer mode="side" position="end" class="settings-drawer">
+        <mat-card class="controls-card">
+          <mat-card-header>
+            <mat-card-title>Board Configuration</mat-card-title>
+          </mat-card-header>
+          <mat-card-content class="controls-content">
+            <mat-accordion class="full-width">
+              <mat-expansion-panel [expanded]="true">
+                <mat-expansion-panel-header>
+                  <mat-panel-title>Court Settings</mat-panel-title>
+                </mat-expansion-panel-header>
+
+                <div class="settings-content">
+                  <mat-checkbox [(ngModel)]="fullCourt" class="full-width">
+                    Draw Full Court (unchecked = half court - upper part only)
+                  </mat-checkbox>
+
+                  @for (input of [pixelsPerMeter, height, width]; track input) {
+                    <div class="slider-group">
+                      @switch (input) {
+                        @case (pixelsPerMeter) {
+                          <label for="pixelsPerMeter"
+                            >Pixels per meter: {{ pixelsPerMeter() }}</label
+                          >
+                        }
+                        @case (height) {
+                          <label for="height"
+                            >Height (meters): {{ height() }}</label
+                          >
+                        }
+                        @case (width) {
+                          <label for="width"
+                            >Width (meters): {{ width() }}</label
+                          >
+                        }
                       }
-                      @case (height) {
-                        <label for="height"
-                          >Height (meters): {{ height() }}</label
-                        >
-                      }
-                      @case (width) {
-                        <label for="width">Width (meters): {{ width() }}</label>
-                      }
-                    }
 
-                    <mat-slider
-                      min="20"
-                      max="40"
-                      step="1"
-                      class="full-width"
-                      [displayWith]="formatSliderLabel"
-                    >
-                      <input matSliderThumb [(ngModel)]="input" />
-                    </mat-slider>
-                  </div>
-                }
-              </div>
-            </mat-expansion-panel>
-          </mat-accordion>
-        </mat-card-content>
-      </mat-card>
-
-      <div #konvaContainer class="konva-container"></div>
-    </div>
+                      <mat-slider
+                        min="20"
+                        max="40"
+                        step="1"
+                        class="full-width"
+                        [displayWith]="formatSliderLabel"
+                      >
+                        <input matSliderThumb [(ngModel)]="input" />
+                      </mat-slider>
+                    </div>
+                  }
+                </div>
+              </mat-expansion-panel>
+            </mat-accordion>
+          </mat-card-content>
+        </mat-card>
+      </mat-drawer>
+    </mat-drawer-container>
   `,
   styles: [
     `
+      .drawer-container {
+        width: 100%;
+        height: 100vh;
+      }
+
       .tactical-board-container {
         display: flex;
         flex-direction: column;
         gap: 16px;
         padding: 16px;
+        height: 100%;
+        position: relative;
+      }
+
+      .toggle-drawer-btn {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        z-index: 1000;
+      }
+
+      .settings-drawer {
+        width: 350px;
+        padding: 16px;
+      }
+
+      .controls-card {
+        height: 100%;
       }
 
       .controls-content {
@@ -127,7 +174,7 @@ import { HandballCourtRenderer } from './services/handball-court-renderer.servic
         display: flex;
         justify-content: center;
         align-items: center;
-        margin-top: 16px;
+        flex: 1;
         border: 1px solid #e0e0e0;
         border-radius: 4px;
         padding: 16px;
