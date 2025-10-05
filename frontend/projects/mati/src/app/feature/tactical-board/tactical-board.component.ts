@@ -29,13 +29,6 @@ import {
   HandballCourtRenderer,
   DEFAULT_PLAYER_STYLES,
 } from './services/handball-court-renderer.service';
-import {
-  Player,
-  Team,
-  PlayerRole,
-  AttackPosition,
-  DefensePosition,
-} from './models/player.model';
 
 @Component({
   selector: 'hostiles-tactical-board',
@@ -123,6 +116,13 @@ import {
                 </mat-expansion-panel-header>
 
                 <div class="settings-content">
+                  <mat-checkbox
+                    [(ngModel)]="showCoordinates"
+                    class="full-width"
+                  >
+                    Show Player Coordinates (x, y)
+                  </mat-checkbox>
+
                   <div class="button-group">
                     <button
                       mat-raised-button
@@ -274,6 +274,7 @@ export class TacticalBoardComponent implements OnDestroy {
   protected readonly width = signal(20);
   protected readonly fullCourt = signal(false); // false = half court (upper part)
   protected readonly playerCount = signal(0);
+  protected readonly showCoordinates = signal(true);
 
   protected formatSliderLabel(value: number): string {
     return `${value}`;
@@ -309,6 +310,16 @@ export class TacticalBoardComponent implements OnDestroy {
         this.initializeAndRenderCourt();
       });
     });
+
+    // Watch for coordinate display toggle
+    afterRenderEffect(() => {
+      const showCoords = this.showCoordinates();
+      untracked(() => {
+        if (this.courtRenderer) {
+          this.courtRenderer.setShowCoordinates(showCoords);
+        }
+      });
+    });
   }
 
   ngOnDestroy() {
@@ -332,6 +343,8 @@ export class TacticalBoardComponent implements OnDestroy {
       playerStyles,
     );
 
+    // Initialize players by default
+    this.courtRenderer.initializeDefaultPlayers();
     this.courtRenderer.render();
     this.updatePlayerCount();
   }

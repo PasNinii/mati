@@ -6,7 +6,6 @@ import {
   Team,
   PlayerRole,
   AttackPosition,
-  DefensePosition,
   DEFAULT_ATTACK_POSITIONS,
   DEFAULT_DEFENSE_POSITIONS,
 } from '../models/player.model';
@@ -53,6 +52,7 @@ export class HandballCourtRenderer {
   private playerStyles: PlayerStyles;
   private players: Player[] = [];
   private playerShapes: Map<string, Konva.Group> = new Map();
+  private showCoordinates: boolean = false;
 
   constructor(
     layer: Konva.Layer,
@@ -79,71 +79,41 @@ export class HandballCourtRenderer {
 
   /**
    * Initialize default players (6 players per team in attack and defense)
+   * Players are always positioned in the upper part of the court (from y=0)
+   * regardless of half or full court mode.
    */
   initializeDefaultPlayers(): void {
     this.players = [];
-    
-    const width = this.config.widthM * this.config.pixelsPerMeter;
-    const height = this.config.heightM * this.config.pixelsPerMeter;
 
-    // Add home team attack players (top half)
+    const pixelsPerMeter = this.config.pixelsPerMeter;
+
+    // Add home team attack players (positioned in upper part using meters from goal)
     Object.entries(DEFAULT_ATTACK_POSITIONS).forEach(([position, coords]) => {
       const player = new Player(
         Team.HOME,
         PlayerRole.ATTACK,
         position as AttackPosition,
         {
-          x: coords.xPercent * width,
-          y: coords.yPercent * height,
+          x: coords.xMeters * pixelsPerMeter, // Convert meters to pixels from left (x=0)
+          y: coords.yMeters * pixelsPerMeter, // Convert meters to pixels from top (y=0)
         },
       );
       this.players.push(player);
     });
 
-    // Add away team defense players (top half, positioned defensively)
+    // Add away team defense players (positioned in upper part using meters from goal)
     DEFAULT_DEFENSE_POSITIONS.forEach((posData) => {
       const player = new Player(
         Team.AWAY,
         PlayerRole.DEFENSE,
         posData.position,
         {
-          x: posData.xPercent * width,
-          y: posData.yPercent * height,
+          x: posData.xMeters * pixelsPerMeter, // Convert meters to pixels from left (x=0)
+          y: posData.yMeters * pixelsPerMeter, // Convert meters to pixels from top (y=0)
         },
       );
       this.players.push(player);
     });
-
-    // If full court, add players for bottom half
-    if (!this.config.halfCourt) {
-      // Add away team attack players (bottom half)
-      Object.entries(DEFAULT_ATTACK_POSITIONS).forEach(([position, coords]) => {
-        const player = new Player(
-          Team.AWAY,
-          PlayerRole.ATTACK,
-          position as AttackPosition,
-          {
-            x: coords.xPercent * width,
-            y: height - coords.yPercent * height,
-          },
-        );
-        this.players.push(player);
-      });
-
-      // Add home team defense players (bottom half)
-      DEFAULT_DEFENSE_POSITIONS.forEach((posData) => {
-        const player = new Player(
-          Team.HOME,
-          PlayerRole.DEFENSE,
-          posData.position,
-          {
-            x: posData.xPercent * width,
-            y: height - posData.yPercent * height,
-          },
-        );
-        this.players.push(player);
-      });
-    }
   }
 
   /**
@@ -322,9 +292,43 @@ export class HandballCourtRenderer {
     group.add(circle);
     group.add(text);
 
+    // Add coordinates text if enabled
+    if (this.showCoordinates) {
+      const xMeters = (
+        player.coordinates.x / this.config.pixelsPerMeter
+      ).toFixed(1);
+      const yMeters = (
+        player.coordinates.y / this.config.pixelsPerMeter
+      ).toFixed(1);
+      const coordsText = new Konva.Text({
+        name: 'coords-text',
+        text: `(${xMeters}m, ${yMeters}m)`,
+        fontSize: 10,
+        fill: '#000000',
+        align: 'center',
+        y: this.playerStyles.playerRadius + 5,
+      });
+      coordsText.offsetX(coordsText.width() / 2);
+      group.add(coordsText);
+    }
+
     // Handle drag events to update player coordinates
     group.on('dragmove', () => {
       player.updateCoordinates(group.x(), group.y());
+      // Update coordinates display if enabled
+      if (this.showCoordinates) {
+        const coordsText = group.findOne('.coords-text') as Konva.Text;
+        if (coordsText) {
+          const xMeters = (
+            player.coordinates.x / this.config.pixelsPerMeter
+          ).toFixed(1);
+          const yMeters = (
+            player.coordinates.y / this.config.pixelsPerMeter
+          ).toFixed(1);
+          coordsText.text(`(${xMeters}m, ${yMeters}m)`);
+          coordsText.offsetX(coordsText.width() / 2);
+        }
+      }
     });
 
     this.playerShapes.set(player.id, group);
@@ -385,6 +389,18 @@ export class HandballCourtRenderer {
     this.players = [];
     this.playerShapes.forEach((shape) => shape.destroy());
     this.playerShapes.clear();
+    this.layer.draw();
+  }
+
+  /**
+   * Sets whether to show player coordinates
+   */
+  setShowCoordinates(show: boolean): void {
+    this.showCoordinates = show;
+    // Re-render players to update coordinate display
+    this.playerShapes.forEach((shape) => shape.destroy());
+    this.playerShapes.clear();
+    this.renderPlayers();
     this.layer.draw();
   }
 

@@ -7,12 +7,12 @@ export enum AttackPosition {
   CB = 'CB', // Center Back
   LB = 'LB', // Left Back
   LW = 'LW', // Left Wing
-  P = 'P',   // Pivot
+  P = 'P', // Pivot
 }
 
 export enum DefensePosition {
-  WINGS = '1',        // Wings (1)
-  BACKS = '2',        // Right & Left Back (2)
+  WINGS = '1', // Wings (1)
+  BACKS = '2', // Right & Left Back (2)
   PIVOT_CENTER = '3', // Pivot & Center Back (3)
 }
 
@@ -81,55 +81,64 @@ export class Player {
   updateCoordinates(x: number, y: number): void {
     this.coordinates = { x, y };
   }
-
-  /**
-   * Clone the player with new coordinates
-   */
-  clone(newCoordinates?: PlayerCoordinates): Player {
-    return new Player(
-      this.team,
-      this.role,
-      this.position,
-      newCoordinates || { ...this.coordinates },
-      this.draggable,
-    );
-  }
 }
 
 /**
  * Default player positions for attack formation (6 players)
- * Positions are in percentage of court dimensions for scaling
+ * Attack players must be OUTSIDE the 9m zone
+ * Wings should be near corners (x=0 or x=max, y≈0)
+ *
+ * For a standard court (40m x 20m):
+ * - 6m zone is approximately at y = 6m
+ * - 9m zone is approximately at y = 9m
+ * - Attack should be beyond 9m (around 10-13m from goal)
+ *
+ * Positions are defined in METERS from the goal (y=0) and from left edge (x=0).
+ * This ensures consistent positioning regardless of half/full court mode.
  */
 export const DEFAULT_ATTACK_POSITIONS: Record<
   AttackPosition,
-  { xPercent: number; yPercent: number }
+  { xMeters: number; yMeters: number }
 > = {
-  [AttackPosition.LW]: { xPercent: 0.1, yPercent: 0.25 }, // Left Wing
-  [AttackPosition.LB]: { xPercent: 0.25, yPercent: 0.35 }, // Left Back
-  [AttackPosition.CB]: { xPercent: 0.5, yPercent: 0.38 }, // Center Back
-  [AttackPosition.RB]: { xPercent: 0.75, yPercent: 0.35 }, // Right Back
-  [AttackPosition.RW]: { xPercent: 0.9, yPercent: 0.25 }, // Right Wing
-  [AttackPosition.P]: { xPercent: 0.5, yPercent: 0.18 }, // Pivot
+  // Wings almost at sidelines - at around 1m from goal
+  [AttackPosition.LW]: { xMeters: 1, yMeters: 1 }, // Left Wing - almost at left edge
+  [AttackPosition.RW]: { xMeters: 19, yMeters: 1 }, // Right Wing - almost at right edge (20m court width - 1m)
+
+  // Backs outside 9m zone (around 11-12m from goal)
+  [AttackPosition.LB]: { xMeters: 1, yMeters: 11.5 }, // Left Back - outside 9m
+  [AttackPosition.CB]: { xMeters: 10, yMeters: 13.5 }, // Center Back - outside 9m (furthest)
+  [AttackPosition.RB]: { xMeters: 19, yMeters: 11.5 }, // Right Back - outside 9m
+
+  // Pivot closer to 9m line, ready to penetrate
+  [AttackPosition.P]: { xMeters: 10, yMeters: 7 }, // Pivot - between 9m and backs
 };
 
 /**
  * Default player positions for defense formation (6 players)
+ * Defense players must be BETWEEN 6m and 9m zones
+ *
+ * For a standard court (40m x 20m):
+ * - 6m zone ends at y = 6m
+ * - 9m zone ends at y = 9m
+ * - Defense should be between these lines (6m < y < 9m)
+ *
  * Using numeric positions: 1=wings, 2=backs, 3=pivot/center
+ * Positions are defined in METERS from the goal (y=0) and from left edge (x=0).
  */
 export const DEFAULT_DEFENSE_POSITIONS: Array<{
   position: DefensePosition;
-  xPercent: number;
-  yPercent: number;
+  xMeters: number;
+  yMeters: number;
 }> = [
-  // Wings (1) - two players
-  { position: DefensePosition.WINGS, xPercent: 0.15, yPercent: 0.22 },
-  { position: DefensePosition.WINGS, xPercent: 0.85, yPercent: 0.22 },
-  
-  // Backs (2) - two players
-  { position: DefensePosition.BACKS, xPercent: 0.3, yPercent: 0.3 },
-  { position: DefensePosition.BACKS, xPercent: 0.7, yPercent: 0.3 },
-  
-  // Pivot & Center Back (3) - two players
-  { position: DefensePosition.PIVOT_CENTER, xPercent: 0.4, yPercent: 0.15 },
-  { position: DefensePosition.PIVOT_CENTER, xPercent: 0.6, yPercent: 0.15 },
+  // Wings (1) - two players, around 2.5m from goal, very wide on the sides
+  { position: DefensePosition.WINGS, xMeters: 2, yMeters: 2.5 },
+  { position: DefensePosition.WINGS, xMeters: 18, yMeters: 2.5 },
+
+  // Backs (2) - two players, around 6m from goal, well spaced
+  { position: DefensePosition.BACKS, xMeters: 4, yMeters: 6 },
+  { position: DefensePosition.BACKS, xMeters: 16, yMeters: 6 },
+
+  // Pivot & Center Back (3) - two players, around 7.5m from goal, well spaced apart
+  { position: DefensePosition.PIVOT_CENTER, xMeters: 8, yMeters: 7.5 },
+  { position: DefensePosition.PIVOT_CENTER, xMeters: 12, yMeters: 7.5 },
 ];
