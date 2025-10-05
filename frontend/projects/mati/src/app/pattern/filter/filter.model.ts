@@ -40,6 +40,14 @@ export class Filter {
       return true;
     }
 
+    // Boolean filters with a default value should always have a value
+    if (
+      this._config.type === FilterType.BOOLEAN &&
+      this._config.defaultValue !== undefined
+    ) {
+      return true;
+    }
+
     if (this._value === null || this._value === undefined) {
       return false;
     }

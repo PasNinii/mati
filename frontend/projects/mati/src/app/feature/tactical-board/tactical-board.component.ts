@@ -34,6 +34,7 @@ import {
 import { FilterComponent } from '../../pattern/filter';
 import { FilterService } from '../../core/services/filter.service';
 import { FilterState } from '../../pattern/filter/filter-config.interface';
+import { KeyboardShortcutService } from '../../core/services/keyboard-shortcut.service';
 
 @Component({
   selector: 'hostiles-tactical-board',
@@ -98,6 +99,7 @@ export class TacticalBoardComponent implements OnInit, OnDestroy {
   protected readonly fullCourt = signal(false); // false = half court (upper part)
   protected readonly playerCount = signal(0);
   protected readonly showCoordinates = signal(true);
+  protected readonly showBall = signal(true);
 
   private readonly stage = linkedSignal<Konva.Stage>(() => {
     // When drawing half court, use half the height (upper part)
@@ -115,7 +117,10 @@ export class TacticalBoardComponent implements OnInit, OnDestroy {
   private readonly layer = signal<Konva.Layer>(new Konva.Layer());
   private courtRenderer?: HandballCourtRenderer;
 
-  constructor(private filterService: FilterService) {
+  constructor(
+    private filterService: FilterService,
+    private keyboardShortcutService: KeyboardShortcutService,
+  ) {
     afterRenderEffect(() => {
       [
         this.pixelsPerMeter(),
@@ -136,6 +141,20 @@ export class TacticalBoardComponent implements OnInit, OnDestroy {
       untracked(() => {
         if (this.courtRenderer) {
           this.courtRenderer.setShowCoordinates(showCoords);
+        }
+      });
+    });
+
+    // Watch for ball visibility toggle
+    afterRenderEffect(() => {
+      const shouldShowBall = this.showBall();
+      untracked(() => {
+        if (this.courtRenderer) {
+          if (shouldShowBall && !this.hasBall()) {
+            this.addBall();
+          } else if (!shouldShowBall && this.hasBall()) {
+            this.removeBall();
+          }
         }
       });
     });
@@ -161,20 +180,21 @@ export class TacticalBoardComponent implements OnInit, OnDestroy {
       this.height.set(Number(state['courtHeight']));
     }
 
+    // Update zoom level
+    if (
+      state['pixelsPerMeter'] !== undefined &&
+      state['pixelsPerMeter'] !== null
+    ) {
+      this.pixelsPerMeter.set(Number(state['pixelsPerMeter']));
+    }
+
     // Update display options
     if (state['showCoordinates'] !== undefined) {
       this.showCoordinates.set(Boolean(state['showCoordinates']));
     }
 
-    if (state['showBall'] !== undefined && !state['showBall']) {
-      this.removeBall();
-    }
-    if (
-      state['showBall'] !== undefined &&
-      state['showBall'] &&
-      !this.hasBall()
-    ) {
-      this.addBall();
+    if (state['showBall'] !== undefined) {
+      this.showBall.set(Boolean(state['showBall']));
     }
   }
 
@@ -198,6 +218,9 @@ export class TacticalBoardComponent implements OnInit, OnDestroy {
       styles,
       playerStyles,
     );
+
+    // Set initial showCoordinates state
+    this.courtRenderer.setShowCoordinates(this.showCoordinates());
 
     // Initialize players by default
     this.courtRenderer.initializeDefaultPlayers();

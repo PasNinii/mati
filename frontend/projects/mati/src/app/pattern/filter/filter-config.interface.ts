@@ -13,10 +13,17 @@ export interface FilterConfig {
   options?: FilterOption[];
   min?: number;
   max?: number;
+  step?: number;
   defaultValue?: any;
   required?: boolean;
   multiple?: boolean;
   clearable?: boolean;
+  shortcut?: string; // Single keyboard shortcut for toggle (e.g., "ctrl+b")
+  shortcuts?: {
+    // Multiple shortcuts for increment/decrement
+    increment?: string;
+    decrement?: string;
+  };
 }
 
 export interface FilterGroup {

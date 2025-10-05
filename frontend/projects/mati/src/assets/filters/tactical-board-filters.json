@@ -11,6 +11,20 @@
         "max": 60,
         "defaultValue": 40,
         "clearable": false
+      },
+      {
+        "id": "pixelsPerMeter",
+        "label": "Zoom Level",
+        "type": "slider",
+        "min": 10,
+        "max": 100,
+        "step": 5,
+        "defaultValue": 30,
+        "clearable": false,
+        "shortcuts": {
+          "increment": "ctrl+i",
+          "decrement": "ctrl+o"
+        }
       }
     ]
   },
@@ -22,7 +36,8 @@
         "id": "showCoordinates",
         "label": "Show Player Coordinates",
         "type": "boolean",
-        "defaultValue": true
+        "defaultValue": true,
+        "shortcut": "ctrl+c"
       }
     ]
   },
@@ -34,7 +49,8 @@
         "id": "showBall",
         "label": "Show Ball",
         "type": "boolean",
-        "defaultValue": true
+        "defaultValue": true,
+        "shortcut": "ctrl+b"
       }
     ]
   }

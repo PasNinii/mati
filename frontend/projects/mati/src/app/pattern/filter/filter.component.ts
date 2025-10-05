@@ -134,6 +134,7 @@ import { SliderFilterComponent } from '../../ui/filters/slider-filter/slider-fil
                         [id]="filterConfig.id"
                         [label]="filterConfig.label"
                         [value]="getFilterValue(filterConfig.id)"
+                        [shortcut]="filterConfig.shortcut || ''"
                         (valueChange)="onFilterChange(filterConfig.id, $event)"
                       />
                     }

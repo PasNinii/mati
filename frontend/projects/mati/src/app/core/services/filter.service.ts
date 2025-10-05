@@ -15,6 +15,7 @@ import {
   FilterGroup,
   FilterState,
 } from '../../pattern/filter/filter-config.interface';
+import { KeyboardShortcutService } from './keyboard-shortcut.service';
 
 @Injectable({
   providedIn: 'root',
@@ -23,6 +24,7 @@ export class FilterService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly keyboardShortcutService = inject(KeyboardShortcutService);
 
   private filterConfigs = signal<FilterGroup[]>([]);
   private filters = signal<Map<string, Filter>>(new Map());
@@ -49,6 +51,93 @@ export class FilterService {
       const state = this.filterState();
       this.updateUrlParams(state);
     });
+
+    // Subscribe to keyboard shortcuts
+    console.log('[FilterService] Subscribing to keyboard shortcuts');
+    this.keyboardShortcutService.shortcutTriggered.subscribe(
+      ({ shortcut, action }) => {
+        console.log('[FilterService] Shortcut triggered event received:', {
+          shortcut,
+          action,
+        });
+        if (action.filterId) {
+          this.handleFilterShortcut(action.filterId, action.action);
+        } else {
+          console.log('[FilterService] No filterId in action');
+        }
+      },
+    );
+  }
+
+  /**
+   * Handle keyboard shortcut for a filter
+   */
+  private handleFilterShortcut(
+    filterId: string,
+    action: 'toggle' | 'increment' | 'decrement',
+  ): void {
+    console.log('[FilterService] handleFilterShortcut called:', {
+      filterId,
+      action,
+    });
+    const filter = this.getFilter(filterId);
+    if (!filter) {
+      console.log('[FilterService] Filter not found:', filterId);
+      return;
+    }
+
+    console.log('[FilterService] Filter found:', {
+      id: filter.id,
+      value: filter.value,
+      type: typeof filter.value,
+    });
+
+    switch (action) {
+      case 'toggle':
+        // Toggle boolean filters
+        if (typeof filter.value === 'boolean') {
+          console.log(
+            '[FilterService] Toggling boolean from',
+            filter.value,
+            'to',
+            !filter.value,
+          );
+          this.updateFilter(filterId, !filter.value);
+        }
+        break;
+      case 'increment':
+        // Increment numeric filters
+        if (typeof filter.value === 'number') {
+          const max = filter.config.max ?? Infinity;
+          const step = filter.config.step ?? 1;
+          const newValue = Math.min(filter.value + step, max);
+          console.log(
+            '[FilterService] Incrementing from',
+            filter.value,
+            'to',
+            newValue,
+            { step, max },
+          );
+          this.updateFilter(filterId, newValue);
+        }
+        break;
+      case 'decrement':
+        // Decrement numeric filters
+        if (typeof filter.value === 'number') {
+          const min = filter.config.min ?? -Infinity;
+          const step = filter.config.step ?? 1;
+          const newValue = Math.max(filter.value - step, min);
+          console.log(
+            '[FilterService] Decrementing from',
+            filter.value,
+            'to',
+            newValue,
+            { step, min },
+          );
+          this.updateFilter(filterId, newValue);
+        }
+        break;
+    }
   }
 
   /**
@@ -75,6 +164,47 @@ export class FilterService {
     groups.forEach((group) => {
       group.filters.forEach((config) => {
         filterMap.set(config.id, new Filter(config));
+
+        // Register single keyboard shortcut if defined (for toggle)
+        if (config.shortcut) {
+          console.log(
+            '[FilterService] Registering single shortcut:',
+            config.shortcut,
+            'for',
+            config.id,
+          );
+          this.keyboardShortcutService.register(config.shortcut, {
+            filterId: config.id,
+            action: 'toggle',
+          });
+        }
+
+        // Register increment/decrement shortcuts if defined
+        if (config.shortcuts?.increment) {
+          console.log(
+            '[FilterService] Registering increment shortcut:',
+            config.shortcuts.increment,
+            'for',
+            config.id,
+          );
+          this.keyboardShortcutService.register(config.shortcuts.increment, {
+            filterId: config.id,
+            action: 'increment',
+          });
+        }
+
+        if (config.shortcuts?.decrement) {
+          console.log(
+            '[FilterService] Registering decrement shortcut:',
+            config.shortcuts.decrement,
+            'for',
+            config.id,
+          );
+          this.keyboardShortcutService.register(config.shortcuts.decrement, {
+            filterId: config.id,
+            action: 'decrement',
+          });
+        }
       });
     });
 
