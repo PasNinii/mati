@@ -1,6 +1,42 @@
 import Konva from 'konva';
 import { CourtConfig, CourtStyles } from '../models/court-config.interface';
 import { HandballZone } from '../models/handball-zone';
+import {
+  Player,
+  Team,
+  PlayerRole,
+  AttackPosition,
+  DefensePosition,
+  DEFAULT_ATTACK_POSITIONS,
+  DEFAULT_DEFENSE_POSITIONS,
+} from '../models/player.model';
+
+/**
+ * Player styling configuration
+ */
+export interface PlayerStyles {
+  homeAttackColor: string;
+  homeDefenseColor: string;
+  awayAttackColor: string;
+  awayDefenseColor: string;
+  playerRadius: number;
+  strokeWidth: number;
+  strokeColor: string;
+  textColor: string;
+  fontSize: number;
+}
+
+export const DEFAULT_PLAYER_STYLES: PlayerStyles = {
+  homeAttackColor: '#2196F3', // Blue for home attack
+  homeDefenseColor: '#1976D2', // Darker blue for home defense
+  awayAttackColor: '#F44336', // Red for away attack
+  awayDefenseColor: '#D32F2F', // Darker red for away defense
+  playerRadius: 20,
+  strokeWidth: 2,
+  strokeColor: '#FFFFFF',
+  textColor: '#FFFFFF',
+  fontSize: 12,
+};
 
 /**
  * Renders a complete handball court with all its elements:
@@ -8,16 +44,26 @@ import { HandballZone } from '../models/handball-zone';
  * - Goal areas (6m and 9m zones)
  * - Goal lines
  * - Center line and circle
+ * - Players (attack and defense)
  */
 export class HandballCourtRenderer {
   private layer: Konva.Layer;
   private config: CourtConfig;
   private styles: CourtStyles;
+  private playerStyles: PlayerStyles;
+  private players: Player[] = [];
+  private playerShapes: Map<string, Konva.Group> = new Map();
 
-  constructor(layer: Konva.Layer, config: CourtConfig, styles: CourtStyles) {
+  constructor(
+    layer: Konva.Layer,
+    config: CourtConfig,
+    styles: CourtStyles,
+    playerStyles: PlayerStyles = DEFAULT_PLAYER_STYLES,
+  ) {
     this.layer = layer;
     this.config = config;
     this.styles = styles;
+    this.playerStyles = playerStyles;
   }
 
   /**
@@ -27,7 +73,77 @@ export class HandballCourtRenderer {
     this.renderCourtBackground();
     this.renderGoalAreas();
     this.renderCenterElements();
+    this.renderPlayers();
     this.layer.draw();
+  }
+
+  /**
+   * Initialize default players (6 players per team in attack and defense)
+   */
+  initializeDefaultPlayers(): void {
+    this.players = [];
+    
+    const width = this.config.widthM * this.config.pixelsPerMeter;
+    const height = this.config.heightM * this.config.pixelsPerMeter;
+
+    // Add home team attack players (top half)
+    Object.entries(DEFAULT_ATTACK_POSITIONS).forEach(([position, coords]) => {
+      const player = new Player(
+        Team.HOME,
+        PlayerRole.ATTACK,
+        position as AttackPosition,
+        {
+          x: coords.xPercent * width,
+          y: coords.yPercent * height,
+        },
+      );
+      this.players.push(player);
+    });
+
+    // Add away team defense players (top half, positioned defensively)
+    DEFAULT_DEFENSE_POSITIONS.forEach((posData) => {
+      const player = new Player(
+        Team.AWAY,
+        PlayerRole.DEFENSE,
+        posData.position,
+        {
+          x: posData.xPercent * width,
+          y: posData.yPercent * height,
+        },
+      );
+      this.players.push(player);
+    });
+
+    // If full court, add players for bottom half
+    if (!this.config.halfCourt) {
+      // Add away team attack players (bottom half)
+      Object.entries(DEFAULT_ATTACK_POSITIONS).forEach(([position, coords]) => {
+        const player = new Player(
+          Team.AWAY,
+          PlayerRole.ATTACK,
+          position as AttackPosition,
+          {
+            x: coords.xPercent * width,
+            y: height - coords.yPercent * height,
+          },
+        );
+        this.players.push(player);
+      });
+
+      // Add home team defense players (bottom half)
+      DEFAULT_DEFENSE_POSITIONS.forEach((posData) => {
+        const player = new Player(
+          Team.HOME,
+          PlayerRole.DEFENSE,
+          posData.position,
+          {
+            x: posData.xPercent * width,
+            y: height - posData.yPercent * height,
+          },
+        );
+        this.players.push(player);
+      });
+    }
   }
 
   /**
@@ -160,6 +276,119 @@ export class HandballCourtRenderer {
   }
 
   /**
+   * Renders all players on the court
+   */
+  private renderPlayers(): void {
+    this.players.forEach((player) => {
+      this.renderPlayer(player);
+    });
+  }
+
+  /**
+   * Renders a single player with circle and label
+   */
+  private renderPlayer(player: Player): void {
+    const group = new Konva.Group({
+      x: player.coordinates.x,
+      y: player.coordinates.y,
+      draggable: player.draggable,
+    });
+
+    // Determine player color based on team and role
+    const fillColor = this.getPlayerColor(player);
+
+    // Create circle for player
+    const circle = new Konva.Circle({
+      radius: this.playerStyles.playerRadius,
+      fill: fillColor,
+      stroke: this.playerStyles.strokeColor,
+      strokeWidth: this.playerStyles.strokeWidth,
+    });
+
+    // Create text label
+    const text = new Konva.Text({
+      text: player.getLabel(),
+      fontSize: this.playerStyles.fontSize,
+      fontStyle: 'bold',
+      fill: this.playerStyles.textColor,
+      align: 'center',
+      verticalAlign: 'middle',
+    });
+
+    // Center the text within the circle
+    text.offsetX(text.width() / 2);
+    text.offsetY(text.height() / 2);
+
+    group.add(circle);
+    group.add(text);
+
+    // Handle drag events to update player coordinates
+    group.on('dragmove', () => {
+      player.updateCoordinates(group.x(), group.y());
+    });
+
+    this.playerShapes.set(player.id, group);
+    this.layer.add(group);
+  }
+
+  /**
+   * Gets the appropriate color for a player based on team and role
+   */
+  private getPlayerColor(player: Player): string {
+    if (player.team === Team.HOME) {
+      return player.role === PlayerRole.ATTACK
+        ? this.playerStyles.homeAttackColor
+        : this.playerStyles.homeDefenseColor;
+    } else {
+      return player.role === PlayerRole.ATTACK
+        ? this.playerStyles.awayAttackColor
+        : this.playerStyles.awayDefenseColor;
+    }
+  }
+
+  /**
+   * Adds a new player to the court
+   */
+  addPlayer(player: Player): void {
+    this.players.push(player);
+    this.renderPlayer(player);
+    this.layer.draw();
+  }
+
+  /**
+   * Removes a player from the court
+   */
+  removePlayer(playerId: string): void {
+    const playerIndex = this.players.findIndex((p) => p.id === playerId);
+    if (playerIndex !== -1) {
+      this.players.splice(playerIndex, 1);
+      const shape = this.playerShapes.get(playerId);
+      if (shape) {
+        shape.destroy();
+        this.playerShapes.delete(playerId);
+        this.layer.draw();
+      }
+    }
+  }
+
+  /**
+   * Gets all current players
+   */
+  getPlayers(): Player[] {
+    return [...this.players];
+  }
+
+  /**
+   * Clears all players from the court
+   */
+  clearPlayers(): void {
+    this.players = [];
+    this.playerShapes.forEach((shape) => shape.destroy());
+    this.playerShapes.clear();
+    this.layer.draw();
+  }
+
+  /**
    * Clears the court and re-renders with new configuration
    */
   refresh(config?: CourtConfig, styles?: CourtStyles): void {
@@ -167,6 +396,7 @@ export class HandballCourtRenderer {
     if (styles) this.styles = styles;
 
     this.layer.destroyChildren();
+    this.playerShapes.clear();
     this.render();
   }
 }

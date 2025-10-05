@@ -25,7 +25,17 @@ import {
   DEFAULT_COURT_CONFIG,
   DEFAULT_COURT_STYLES,
 } from './models/court-config.interface';
-import { HandballCourtRenderer } from './services/handball-court-renderer.service';
+import {
+  HandballCourtRenderer,
+  DEFAULT_PLAYER_STYLES,
+} from './services/handball-court-renderer.service';
+import {
+  Player,
+  Team,
+  PlayerRole,
+  AttackPosition,
+  DefensePosition,
+} from './models/player.model';
 
 @Component({
   selector: 'hostiles-tactical-board',
@@ -106,6 +116,57 @@ import { HandballCourtRenderer } from './services/handball-court-renderer.servic
                   }
                 </div>
               </mat-expansion-panel>
+
+              <mat-expansion-panel>
+                <mat-expansion-panel-header>
+                  <mat-panel-title>Player Management</mat-panel-title>
+                </mat-expansion-panel-header>
+
+                <div class="settings-content">
+                  <div class="button-group">
+                    <button
+                      mat-raised-button
+                      color="primary"
+                      (click)="initializePlayers()"
+                      class="full-width"
+                    >
+                      Initialize Players (6 per team)
+                    </button>
+                    <button
+                      mat-raised-button
+                      color="warn"
+                      (click)="clearAllPlayers()"
+                      class="full-width"
+                    >
+                      Clear All Players
+                    </button>
+                  </div>
+
+                  <div class="info-section">
+                    <h4>Attack Positions</h4>
+                    <p class="position-info">
+                      RW = Right Wing<br />
+                      RB = Right Back<br />
+                      CB = Center Back<br />
+                      LB = Left Back<br />
+                      LW = Left Wing<br />
+                      P = Pivot
+                    </p>
+
+                    <h4>Defense Positions</h4>
+                    <p class="position-info">
+                      1 = Wings<br />
+                      2 = Right & Left Back<br />
+                      3 = Pivot & Center Back
+                    </p>
+
+                    <h4>Player Count</h4>
+                    <p class="position-info">
+                      Total: {{ playerCount() }} players
+                    </p>
+                  </div>
+                </div>
+              </mat-expansion-panel>
             </mat-accordion>
           </mat-card-content>
         </mat-card>
@@ -175,6 +236,32 @@ import { HandballCourtRenderer } from './services/handball-court-renderer.servic
         padding: 16px;
         background-color: #ffffff;
       }
+
+      .button-group {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .info-section {
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid #e0e0e0;
+      }
+
+      .info-section h4 {
+        margin: 12px 0 8px 0;
+        font-size: 14px;
+        font-weight: 500;
+        color: rgba(0, 0, 0, 0.87);
+      }
+
+      .position-info {
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.6;
+        color: rgba(0, 0, 0, 0.6);
+      }
     `,
   ],
 })
@@ -186,6 +273,8 @@ export class TacticalBoardComponent implements OnDestroy {
   protected readonly height = signal(30);
   protected readonly width = signal(20);
   protected readonly fullCourt = signal(false); // false = half court (upper part)
+  protected readonly playerCount = signal(0);
+
   protected formatSliderLabel(value: number): string {
     return `${value}`;
   }
@@ -234,14 +323,49 @@ export class TacticalBoardComponent implements OnDestroy {
 
     const config = this.buildCourtConfig();
     const styles = DEFAULT_COURT_STYLES;
+    const playerStyles = DEFAULT_PLAYER_STYLES;
 
     this.courtRenderer = new HandballCourtRenderer(
       this.layer(),
       config,
       styles,
+      playerStyles,
     );
 
     this.courtRenderer.render();
+    this.updatePlayerCount();
+  }
+
+  /**
+   * Initialize default players on the court
+   */
+  protected initializePlayers(): void {
+    if (!this.courtRenderer) return;
+
+    this.courtRenderer.initializeDefaultPlayers();
+    this.courtRenderer.refresh();
+    this.updatePlayerCount();
+  }
+
+  /**
+   * Clear all players from the court
+   */
+  protected clearAllPlayers(): void {
+    if (!this.courtRenderer) return;
+
+    this.courtRenderer.clearPlayers();
+    this.updatePlayerCount();
+  }
+
+  /**
+   * Updates the player count signal
+   */
+  private updatePlayerCount(): void {
+    if (this.courtRenderer) {
+      this.playerCount.set(this.courtRenderer.getPlayers().length);
+    } else {
+      this.playerCount.set(0);
+    }
   }
 
   /**
