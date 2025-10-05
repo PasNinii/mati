@@ -1,14 +1,8 @@
-import {
-  Component,
-  input,
-  output,
-  model,
-  ChangeDetectionStrategy,
-  effect,
-} from '@angular/core';
+import { Component, input, ChangeDetectionStrategy } from '@angular/core';
 import { MatSliderModule } from '@angular/material/slider';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { FormsModule } from '@angular/forms';
+import { BaseFilterComponent } from '../base-filter.component';
 
 @Component({
   selector: 'app-slider-filter',
@@ -63,34 +57,15 @@ import { FormsModule } from '@angular/forms';
     `,
   ],
 })
-export class SliderFilterComponent {
-  // Inputs using signal-based API
-  id = input.required<string>();
-  label = input<string>('');
+export class SliderFilterComponent extends BaseFilterComponent<number> {
+  // Additional inputs specific to slider filter
   min = input<number>(0);
   max = input<number>(100);
   step = input<number>(1);
-  value = input<number>(0);
   unit = input<string>('');
   showTickMarks = input<boolean>(false);
 
-  // Output using signal-based API
-  valueChange = output<number>();
-
-  // Internal signal for the current value
-  internalValue = model<number>(0);
-
-  constructor() {
-    // Sync value input to internalValue whenever it changes
-    effect(() => {
-      const newValue = this.value();
-      if (this.internalValue() !== newValue) {
-        this.internalValue.set(newValue);
-      }
-    });
-  }
-
-  onValueChange(value: number) {
-    this.valueChange.emit(value);
+  protected getDefaultValue(): number {
+    return 0;
   }
 }

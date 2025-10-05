@@ -1,13 +1,7 @@
-import {
-  Component,
-  input,
-  output,
-  model,
-  ChangeDetectionStrategy,
-  effect,
-} from '@angular/core';
+import { Component, input, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { BaseFilterComponent } from '../base-filter.component';
 
 @Component({
   selector: 'app-boolean-filter',
@@ -19,6 +13,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
         [(ngModel)]="internalValue"
         (ngModelChange)="onValueChange($event)"
         color="primary"
+        [disableRipple]="false"
       >
         <span class="filter-label">
           {{ label() }}
@@ -65,31 +60,11 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
     `,
   ],
 })
-export class BooleanFilterComponent {
-  // Inputs using signal-based API
-  id = input.required<string>();
-  label = input<string>('');
-  value = input<boolean>(false);
+export class BooleanFilterComponent extends BaseFilterComponent<boolean> {
+  // Additional inputs specific to boolean filter
   shortcut = input<string>(''); // Keyboard shortcut to display
 
-  // Output using signal-based API
-  valueChange = output<boolean>();
-
-  // Internal signal for the current value
-  internalValue = model<boolean>(false);
-
-  constructor() {
-    // Sync value input to internalValue whenever it changes
-    effect(() => {
-      const newValue = this.value();
-      if (this.internalValue() !== newValue) {
-        this.internalValue.set(newValue);
-      }
-    });
-  }
-
-  onValueChange(checked: boolean) {
-    this.internalValue.set(checked);
-    this.valueChange.emit(checked);
+  protected getDefaultValue(): boolean {
+    return false;
   }
 }

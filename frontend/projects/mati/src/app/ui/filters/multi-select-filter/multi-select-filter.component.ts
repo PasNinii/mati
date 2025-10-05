@@ -1,17 +1,11 @@
-import {
-  Component,
-  input,
-  output,
-  model,
-  ChangeDetectionStrategy,
-  effect,
-} from '@angular/core';
+import { Component, input, ChangeDetectionStrategy } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { FormsModule } from '@angular/forms';
 import { FilterOption } from '../../../pattern/filter/filter-config.interface';
+import { BaseFilterComponent } from '../base-filter.component';
 
 @Component({
   selector: 'app-multi-select-filter',
@@ -60,37 +54,20 @@ import { FilterOption } from '../../../pattern/filter/filter-config.interface';
     `,
   ],
 })
-export class MultiSelectFilterComponent {
-  // Inputs using signal-based API
-  id = input.required<string>();
-  label = input<string>('');
+export class MultiSelectFilterComponent extends BaseFilterComponent<any[]> {
+  // Additional inputs specific to multi-select filter
   options = input<FilterOption[]>([]);
   clearable = input<boolean>(true);
-  value = input<any[]>([]);
 
-  // Output using signal-based API
-  valueChange = output<any[]>();
-
-  // Internal signal for the current value
-  internalValue = model<any[]>([]);
-
-  constructor() {
-    // Sync value input to internalValue whenever it changes
-    effect(() => {
-      const newValue = this.value() || [];
-      const currentValue = this.internalValue();
-      if (JSON.stringify(currentValue) !== JSON.stringify(newValue)) {
-        this.internalValue.set(newValue);
-      }
-    });
+  protected getDefaultValue(): any[] {
+    return [];
   }
 
-  onValueChange(value: any[]) {
-    this.valueChange.emit(value || []);
+  protected override valuesEqual(a: any[], b: any[]): boolean {
+    return JSON.stringify(a) === JSON.stringify(b);
   }
 
-  clear() {
-    this.internalValue.set([]);
-    this.valueChange.emit([]);
+  override onValueChange(value: any[]): void {
+    super.onValueChange(value || []);
   }
 }

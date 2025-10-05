@@ -15,6 +15,7 @@ export class KeyboardShortcutService {
   private shortcuts = new Map<string, ShortcutAction>();
   private destroy$ = new Subject<void>();
   private isListening = false;
+  private boundHandleKeyDown: ((event: KeyboardEvent) => void) | null = null;
 
   constructor() {
     this.startListening();
@@ -27,16 +28,7 @@ export class KeyboardShortcutService {
    */
   register(shortcut: string, action: ShortcutAction): void {
     const normalizedShortcut = this.normalizeShortcut(shortcut);
-    console.log('[KeyboardShortcut] Registering:', {
-      original: shortcut,
-      normalized: normalizedShortcut,
-      action,
-    });
     this.shortcuts.set(normalizedShortcut, action);
-    console.log(
-      '[KeyboardShortcut] Total shortcuts registered:',
-      this.shortcuts.size,
-    );
   }
 
   /**
@@ -68,48 +60,51 @@ export class KeyboardShortcutService {
   private startListening(): void {
     if (this.isListening) return;
 
-    fromEvent<KeyboardEvent>(document, 'keydown')
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((event) => {
-        // Check if we should handle this event (not in input fields, etc.)
-        if (!this.shouldHandleEvent(event)) {
-          console.log('[KeyboardShortcut] Event ignored (in input field)');
-          return;
-        }
-
-        const shortcut = this.eventToShortcut(event);
-        console.log('[KeyboardShortcut] Key pressed:', {
-          shortcut,
-          registeredShortcuts: Array.from(this.shortcuts.keys()),
-          hasAction: this.shortcuts.has(shortcut),
-        });
-
-        const action = this.shortcuts.get(shortcut);
-
-        if (action) {
-          console.log('[KeyboardShortcut] Action found! Executing:', action);
-          // Prevent default browser behavior
-          event.preventDefault();
-          event.stopPropagation();
-
-          if (action.customHandler) {
-            console.log('[KeyboardShortcut] Calling custom handler');
-            action.customHandler();
-          } else {
-            console.log('[KeyboardShortcut] Emitting shortcut trigger');
-            // Emit event that can be handled by subscribers
-            this.shortcutTriggered$.next({ shortcut, action });
-          }
-        }
-      });
+    // Use capture phase to intercept events before they reach components
+    this.boundHandleKeyDown = this.handleKeyDown.bind(this);
+    document.addEventListener('keydown', this.boundHandleKeyDown, {
+      capture: true,
+    });
 
     this.isListening = true;
+  }
+
+  /**
+   * Handle keydown events
+   */
+  private handleKeyDown(event: KeyboardEvent): void {
+    // Check if we should handle this event (not in input fields, etc.)
+    if (!this.shouldHandleEvent(event)) {
+      return;
+    }
+
+    const shortcut = this.eventToShortcut(event);
+    const action = this.shortcuts.get(shortcut);
+
+    if (action) {
+      // Prevent default browser behavior
+      event.preventDefault();
+      event.stopPropagation();
+
+      if (action.customHandler) {
+        action.customHandler();
+      } else {
+        // Emit event that can be handled by subscribers
+        this.shortcutTriggered$.next({ shortcut, action });
+      }
+    }
   }
 
   /**
    * Stop listening for keyboard events
    */
   stopListening(): void {
+    if (this.boundHandleKeyDown) {
+      document.removeEventListener('keydown', this.boundHandleKeyDown, {
+        capture: true,
+      });
+      this.boundHandleKeyDown = null;
+    }
     this.destroy$.next();
     this.destroy$.complete();
     this.isListening = false;
@@ -137,9 +132,13 @@ export class KeyboardShortcutService {
     const target = event.target as HTMLElement;
     const tagName = target.tagName.toLowerCase();
 
-    // Don't handle shortcuts when typing in input fields, textareas, etc.
+    // Don't handle shortcuts when typing in text input fields, textareas, or select elements
+    // But DO handle them for checkboxes, buttons, and other interactive elements
     if (
-      tagName === 'input' ||
+      (tagName === 'input' &&
+        (target as HTMLInputElement).type !== 'checkbox' &&
+        (target as HTMLInputElement).type !== 'button' &&
+        (target as HTMLInputElement).type !== 'radio') ||
       tagName === 'textarea' ||
       tagName === 'select' ||
       target.isContentEditable

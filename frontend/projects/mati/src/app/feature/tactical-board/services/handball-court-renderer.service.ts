@@ -430,7 +430,9 @@ export class HandballCourtRenderer {
     // Re-render players to update coordinate display
     this.playerShapes.forEach((shape) => shape.destroy());
     this.playerShapes.clear();
+    this.ballShape?.destroy();
     this.renderPlayers();
+    this.renderBall();
     this.layer.draw();
   }
 

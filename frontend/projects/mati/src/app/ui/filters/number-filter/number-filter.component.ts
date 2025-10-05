@@ -1,16 +1,10 @@
-import {
-  Component,
-  input,
-  output,
-  model,
-  ChangeDetectionStrategy,
-  effect,
-} from '@angular/core';
+import { Component, input, ChangeDetectionStrategy } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { FormsModule } from '@angular/forms';
+import { BaseFilterComponent } from '../base-filter.component';
 
 @Component({
   selector: 'app-number-filter',
@@ -57,38 +51,14 @@ import { FormsModule } from '@angular/forms';
     `,
   ],
 })
-export class NumberFilterComponent {
-  // Inputs using signal-based API
-  id = input.required<string>();
-  label = input<string>('');
+export class NumberFilterComponent extends BaseFilterComponent<number | null> {
+  // Additional inputs specific to number filter
   placeholder = input<string>('');
   min = input<number | undefined>(undefined);
   max = input<number | undefined>(undefined);
   clearable = input<boolean>(true);
-  value = input<number | null>(null);
 
-  // Output using signal-based API
-  valueChange = output<number | null>();
-
-  // Internal signal for the current value
-  internalValue = model<number | null>(null);
-
-  constructor() {
-    // Sync value input to internalValue whenever it changes
-    effect(() => {
-      const newValue = this.value();
-      if (this.internalValue() !== newValue) {
-        this.internalValue.set(newValue);
-      }
-    });
-  }
-
-  onValueChange(value: number | null) {
-    this.valueChange.emit(value);
-  }
-
-  clear() {
-    this.internalValue.set(null);
-    this.valueChange.emit(null);
+  protected getDefaultValue(): number | null {
+    return null;
   }
 }

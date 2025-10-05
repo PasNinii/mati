@@ -1,17 +1,11 @@
-import {
-  Component,
-  input,
-  output,
-  model,
-  ChangeDetectionStrategy,
-  effect,
-} from '@angular/core';
+import { Component, input, ChangeDetectionStrategy } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { FormsModule } from '@angular/forms';
 import { FilterOption } from '../../../pattern/filter/filter-config.interface';
+import { BaseFilterComponent } from '../base-filter.component';
 
 @Component({
   selector: 'app-select-filter',
@@ -60,37 +54,13 @@ import { FilterOption } from '../../../pattern/filter/filter-config.interface';
     `,
   ],
 })
-export class SelectFilterComponent {
-  // Inputs using signal-based API
-  id = input.required<string>();
-  label = input<string>('');
+export class SelectFilterComponent extends BaseFilterComponent<any> {
+  // Additional inputs specific to select filter
   placeholder = input<string>('Select...');
   options = input<FilterOption[]>([]);
   clearable = input<boolean>(true);
-  value = input<any>(null);
 
-  // Output using signal-based API
-  valueChange = output<any>();
-
-  // Internal signal for the current value
-  internalValue = model<any>(null);
-
-  constructor() {
-    // Sync value input to internalValue whenever it changes
-    effect(() => {
-      const newValue = this.value();
-      if (this.internalValue() !== newValue) {
-        this.internalValue.set(newValue);
-      }
-    });
-  }
-
-  onValueChange(value: any) {
-    this.valueChange.emit(value);
-  }
-
-  clear() {
-    this.internalValue.set(null);
-    this.valueChange.emit(null);
+  protected getDefaultValue(): any {
+    return null;
   }
 }

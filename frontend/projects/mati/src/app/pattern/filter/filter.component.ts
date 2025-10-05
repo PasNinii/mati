@@ -176,10 +176,13 @@ export class FilterComponent implements OnInit {
   activeFiltersCount = this.filterService.activeFiltersCount;
 
   constructor() {
-    // Effect to emit filter changes
+    // Effect to emit filter changes whenever filterState changes
     effect(() => {
       const state = this.filterService.filterState();
-      this.filtersChanged.emit(state);
+      // Use queueMicrotask to avoid triggering during change detection
+      queueMicrotask(() => {
+        this.filtersChanged.emit(state);
+      });
     });
   }
 
@@ -196,7 +199,9 @@ export class FilterComponent implements OnInit {
   }
 
   getFilterValue(filterId: string): any {
-    const filter = this.filterService.getFilter(filterId);
+    // Access the filters signal to make this reactive
+    const filtersMap = this.filterService.getFilters()();
+    const filter = filtersMap.get(filterId);
     return filter?.value;
   }
 

@@ -1,16 +1,10 @@
-import {
-  Component,
-  input,
-  output,
-  model,
-  ChangeDetectionStrategy,
-  effect,
-} from '@angular/core';
+import { Component, input, ChangeDetectionStrategy } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { FormsModule } from '@angular/forms';
+import { BaseFilterComponent } from '../base-filter.component';
 
 @Component({
   selector: 'app-text-filter',
@@ -55,36 +49,12 @@ import { FormsModule } from '@angular/forms';
     `,
   ],
 })
-export class TextFilterComponent {
-  // Inputs using signal-based API
-  id = input.required<string>();
-  label = input<string>('');
+export class TextFilterComponent extends BaseFilterComponent<string> {
+  // Additional inputs specific to text filter
   placeholder = input<string>('');
   clearable = input<boolean>(true);
-  value = input<string>('');
 
-  // Output using signal-based API
-  valueChange = output<string>();
-
-  // Internal signal for the current value
-  internalValue = model<string>('');
-
-  constructor() {
-    // Sync value input to internalValue whenever it changes
-    effect(() => {
-      const newValue = this.value();
-      if (this.internalValue() !== newValue) {
-        this.internalValue.set(newValue);
-      }
-    });
-  }
-
-  onValueChange(value: string) {
-    this.valueChange.emit(value);
-  }
-
-  clear() {
-    this.internalValue.set('');
-    this.valueChange.emit('');
+  protected getDefaultValue(): string {
+    return '';
   }
 }
