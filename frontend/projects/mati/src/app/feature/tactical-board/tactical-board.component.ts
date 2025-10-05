@@ -159,8 +159,8 @@ export class TacticalBoardComponent implements OnDestroy {
       y: 0,
       width: width,
       height: height,
-      fill: '#8FBC8F',
-      stroke: '#228B22',
+      fill: '#FFA500', // Orange
+      stroke: '#000000',
       strokeWidth: 3,
     });
     this.layer().add(courtBackground);
@@ -189,7 +189,7 @@ export class TacticalBoardComponent implements OnDestroy {
     const goalWidthM = 3; // Goal width in meters
     const courtWidthM = this.width(); // Court width in meters
 
-    // Create 6m zone (solid line)
+    // Create 6m zone (filled blue, no stroke)
     const sixMeterPath = this.buildZonePath(
       centerX,
       yPosition,
@@ -202,12 +202,12 @@ export class TacticalBoardComponent implements OnDestroy {
     console.log('6m path:', sixMeterPath);
     const sixMeterZone = new Konva.Path({
       data: sixMeterPath,
-      stroke: '#FF3333',
-      strokeWidth: 3,
+      fill: '#4169E1', // Royal Blue
+      stroke: undefined, // No stroke
     });
     this.layer().add(sixMeterZone);
 
-    // Create 9m zone (dashed line)
+    // Create 9m zone (dashed black line, no fill)
     const nineMeterPath = this.buildZonePath(
       centerX,
       yPosition,
@@ -220,9 +220,10 @@ export class TacticalBoardComponent implements OnDestroy {
     console.log('9m path:', nineMeterPath);
     const nineMeterZone = new Konva.Path({
       data: nineMeterPath,
-      stroke: '#3333FF',
+      stroke: '#000000', // Black
       strokeWidth: 3,
       dash: [8, 6],
+      fill: undefined, // No fill
     });
     this.layer().add(nineMeterZone);
     
