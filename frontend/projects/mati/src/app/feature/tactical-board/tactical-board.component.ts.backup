@@ -1,0 +1,411 @@
+import {
+  afterRenderEffect,
+  Component,
+  ElementRef,
+  linkedSignal,
+  OnDestroy,
+  signal,
+  untracked,
+  viewChild,
+} from '@angular/core';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSliderModule } from '@angular/material/slider';
+import { MatCardModule } from '@angular/material/card';
+
+import Konva from 'konva';
+import { 
+  CourtConfig, 
+  CourtStyles, 
+  DEFAULT_COURT_CONFIG, 
+  DEFAULT_COURT_STYLES 
+} from './models/court-config.interface';
+import { HandballCourtRenderer } from './services/handball-court-renderer.service';
+
+@Component({
+  selector: 'hostiles-tactical-board',
+  standalone: true,
+  imports: [
+    FormsModule,
+    ReactiveFormsModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSliderModule,
+    MatCardModule,
+  ],
+  template: `
+    <div class="tactical-board-container">
+      <mat-card class="controls-card">
+        <mat-card-header>
+          <mat-card-title>Board Configuration</mat-card-title>
+        </mat-card-header>
+        <mat-card-content class="controls-content">
+          @for (input of [pixelsPerMeter, height, width]; track input) {
+            @switch (input) {
+              @case (pixelsPerMeter) {
+                <label for="pixelsPerMeter"
+                  >Pixels per meter: {{ pixelsPerMeter() }}</label
+                >
+              }
+              @case (height) {
+                <label for="height">Height (meters): {{ height() }}</label>
+              }
+              @case (width) {
+                <label for="width">Width (meters): {{ width() }}</label>
+              }
+            }
+
+            <mat-slider
+              min="20"
+              max="40"
+              step="1"
+              class="full-width"
+              [displayWith]="formatSliderLabel"
+            >
+              <input matSliderThumb [(ngModel)]="input" />
+            </mat-slider>
+          }
+        </mat-card-content>
+      </mat-card>
+
+      <div #konvaContainer class="konva-container"></div>
+    </div>
+  `,
+  styles: [
+    `
+      .tactical-board-container {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding: 16px;
+      }
+
+      .controls-content {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        padding: 8px;
+        align-items: center;
+      }
+
+      .konva-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 16px;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        padding: 16px;
+        background-color: #ffffff;
+      }
+    `,
+  ],
+})
+export class TacticalBoardComponent implements OnDestroy {
+  protected readonly konvaContainer =
+    viewChild.required<ElementRef<HTMLDivElement>>('konvaContainer');
+
+  protected readonly pixelsPerMeter = signal(20);
+  protected readonly height = signal(30);
+  protected readonly width = signal(20);
+  protected formatSliderLabel(value: number): string {
+    return `${value}`;
+  }
+
+  private readonly stage = linkedSignal<Konva.Stage>(() => {
+    return new Konva.Stage({
+      container: this.konvaContainer().nativeElement,
+      width: this.width() * this.pixelsPerMeter(),
+      height: this.height() * this.pixelsPerMeter(),
+    });
+  });
+
+  private readonly layer = signal<Konva.Layer>(new Konva.Layer());
+  private courtRenderer?: HandballCourtRenderer;
+
+  constructor() {
+    afterRenderEffect(() => {
+      [
+        this.pixelsPerMeter(),
+        this.height(),
+        this.width(),
+        this.konvaContainer(),
+      ];
+
+      untracked(() => {
+        this.initializeAndRenderCourt();
+      });
+    });
+  }
+
+  ngOnDestroy() {
+    this.stage()?.destroy();
+  }
+
+  /**
+   * Initializes Konva stage and renders the handball court
+   */
+  private initializeAndRenderCourt(): void {
+    this.stage().add(this.layer());
+    
+    const config = this.buildCourtConfig();
+    const styles = DEFAULT_COURT_STYLES;
+    
+    this.courtRenderer = new HandballCourtRenderer(
+      this.layer(),
+      config,
+      styles
+    );
+    
+    this.courtRenderer.render();
+  }
+
+  /**
+   * Builds court configuration from current signal values
+   */
+  private buildCourtConfig(): CourtConfig {
+    return {
+      widthM: this.width(),
+      heightM: this.height(),
+      pixelsPerMeter: this.pixelsPerMeter(),
+      goalWidthM: DEFAULT_COURT_CONFIG.goalWidthM,
+    };
+  }
+
+}
+    const courtBackground = new Konva.Rect({
+      x: 0,
+      y: 0,
+      width: width,
+      height: height,
+      fill: '#FFA500', // Orange
+      stroke: '#000000',
+      strokeWidth: 3,
+    });
+    this.layer().add(courtBackground);
+
+    // Calculate meters to pixels ratio
+    const zoneCenter = width / 2;
+
+    this.createCourtZone(zoneCenter, 0, this.pixelsPerMeter(), false);
+    this.createCourtZone(zoneCenter, height, this.pixelsPerMeter(), true);
+    this.createMiddle(height, width, this.pixelsPerMeter());
+  }
+
+  /**
+   * Creates 6-meter and 9-meter zones at specified position
+   * @param centerX X-coordinate of the zone center
+   * @param yPosition Y-coordinate (0 for top, height for bottom)
+   * @param pixelsPerMeter Conversion factor from meters to pixels
+   * @param isBottom Whether this zone is at the bottom (true) or top (false)
+   */
+  private createCourtZone(
+    centerX: number,
+    yPosition: number,
+    pixelsPerMeter: number,
+    isBottom: boolean,
+  ) {
+    const goalWidthM = 3; // Goal width in meters
+
+    // Create 6m zone (filled blue, no stroke)
+    const sixMeterPath = this.buildZonePath(
+      centerX,
+      yPosition,
+      pixelsPerMeter,
+      goalWidthM,
+      6,
+      isBottom,
+    );
+    const sixMeterZone = new Konva.Path({
+      data: sixMeterPath,
+      fill: '#4169E1', // Royal Blue
+      stroke: undefined, // No stroke
+    });
+    this.layer().add(sixMeterZone);
+
+    // Create 9m zone (dashed black line, no fill)
+    const nineMeterPath = this.buildZonePath(
+      centerX,
+      yPosition,
+      pixelsPerMeter,
+      goalWidthM,
+      9,
+      isBottom,
+    );
+    const nineMeterZone = new Konva.Path({
+      data: nineMeterPath,
+      stroke: '#000000', // Black
+      strokeWidth: 3,
+      dash: [8, 6],
+      fill: undefined, // No fill
+    });
+    this.layer().add(nineMeterZone);
+
+    // Draw the goal line (3m wide, centered)
+    const halfGoalPx = (goalWidthM / 2) * pixelsPerMeter;
+    const goalLine = new Konva.Line({
+      points: [
+        centerX - halfGoalPx,
+        yPosition,
+        centerX + halfGoalPx,
+        yPosition,
+      ],
+      stroke: '#000000',
+      strokeWidth: 4,
+    });
+    this.layer().add(goalLine);
+  }
+
+  /**
+   * Builds the SVG path for a zone (6m or 9m) using exact geometry.
+   *
+   * Algorithm explanation:
+   * The handball zone is defined as all points at distance R from the nearest element:
+   * - The goal segment (3m wide, centered)
+   * - The goal line (entire width)
+   *
+   * The resulting shape is composed of:
+   * 1. Two circular arcs (quarter circles) around each goal post
+   * 2. A straight line parallel to the goal line connecting the arcs
+   *
+   * Construction:
+   * - Left arc: from horizontal left (-R from post) to vertical top (R from goal line)
+   * - Straight line: horizontally from left post to right post at distance R
+   * - Right arc: from vertical top to horizontal right (+R from post)
+   *
+   * @param centerX X-coordinate of zone center in pixels
+   * @param yPosition Y-coordinate of goal line in pixels
+   * @param pxPerM Pixels per meter conversion factor
+   * @param goalWidthM Goal width in meters (3m)
+   * @param radiusM Zone radius in meters (6 or 9)
+   * @param isBottom Whether zone is at bottom (true) or top (false)
+   * @returns SVG path data string
+   */
+  private buildZonePath(
+    centerX: number,
+    yPosition: number,
+    pxPerM: number,
+    goalWidthM: number,
+    radiusM: number,
+    isBottom: boolean,
+  ): string {
+    // Convert to pixels
+    const R = radiusM * pxPerM;
+    const halfGoal = (goalWidthM / 2) * pxPerM;
+
+    // Direction multiplier for top vs bottom
+    const dir = isBottom ? 1 : -1;
+
+    // Goal posts positions
+    const leftPostX = centerX - halfGoal;
+    const rightPostX = centerX + halfGoal;
+
+    // Clear and simple approach: build path segment by segment
+    const points: { x: number; y: number }[] = [];
+    const numSegments = 100;
+
+    // Key coordinates:
+    // Posts are at: (leftPostX, yPosition) and (rightPostX, yPosition)
+    // The zone always extends TOWARD THE CENTER of the field
+    // For top zone (yPosition=0): zone extends from 0 to +R (downward into field)
+    // For bottom zone (yPosition=height): zone extends from height to height-R (upward into field)
+
+    // So both zones extend "inward" but in opposite Y directions
+    // Top zone: isBottom=false, yPosition=0, extend downward: yExtent = 0 + R
+    // Bottom zone: isBottom=true, yPosition=600, extend upward: yExtent = 600 - R
+
+    const yExtent = isBottom ? yPosition - R : yPosition + R;
+
+    // PART 1: Left quarter circle
+    // Center: (leftPostX, yPosition), Radius: R
+    // Start point: (leftPostX - R, yPosition) - leftmost point on goal line
+    // End point: (leftPostX, yExtent) - extends into the field
+
+    for (let i = 0; i <= numSegments / 4; i++) {
+      const t = i / (numSegments / 4);
+
+      if (isBottom) {
+        // Bottom zone at yPosition=600: extends UPWARD (decreasing Y)
+        // Use angles that go from left to up: PI to PI/2
+        const angle = Math.PI - t * (Math.PI / 2);
+        const x = leftPostX + R * Math.cos(angle);
+        const offsetY = R * Math.sin(angle); // sin goes from 0 to 1
+        const y = yPosition - offsetY; // Subtract to go upward
+        points.push({ x, y });
+      } else {
+        // Top zone at yPosition=0: extends DOWNWARD (increasing Y)
+        // Use angles but compute Y differently to ensure downward movement
+        const angle = Math.PI - t * (Math.PI / 2); // PI to PI/2
+        const x = leftPostX + R * Math.cos(angle);
+        const offsetY = R * Math.sin(angle); // sin goes from 0 to 1
+        const y = yPosition + offsetY; // ADD to go downward
+        points.push({ x, y });
+      }
+    }
+
+    // PART 2: Straight line at yExtent from left post to right post
+    for (let i = 1; i <= numSegments / 4; i++) {
+      const t = i / (numSegments / 4);
+      const x = leftPostX + t * (rightPostX - leftPostX);
+      points.push({ x, y: yExtent });
+    }
+
+    // PART 3: Right quarter circle
+    // Center: (rightPostX, yPosition), Radius: R
+    // Start point: (rightPostX, yExtent) - extends into the field
+    // End point: (rightPostX + R, yPosition) - rightmost point on goal line
+
+    for (let i = 1; i <= numSegments / 4; i++) {
+      const t = i / (numSegments / 4);
+
+      if (isBottom) {
+        // Bottom zone at yPosition=600: extends UPWARD (decreasing Y)
+        // Use angles that go from up to right: PI/2 to 0
+        const angle = Math.PI / 2 - t * (Math.PI / 2);
+        const x = rightPostX + R * Math.cos(angle);
+        const offsetY = R * Math.sin(angle); // sin goes from 1 to 0
+        const y = yPosition - offsetY; // Subtract to stay upward
+        points.push({ x, y });
+      } else {
+        // Top zone at yPosition=0: extends DOWNWARD (increasing Y)
+        // Use angles but compute Y differently to ensure downward movement
+        const angle = Math.PI / 2 - t * (Math.PI / 2); // PI/2 to 0
+        const x = rightPostX + R * Math.cos(angle);
+        const offsetY = R * Math.sin(angle); // sin goes from 1 to 0
+        const y = yPosition + offsetY; // ADD to stay downward
+        points.push({ x, y });
+      }
+    }
+
+    // Build SVG path
+    if (points.length === 0) return '';
+
+    let path = `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
+    for (let i = 1; i < points.length; i++) {
+      path += ` L ${points[i].x.toFixed(2)} ${points[i].y.toFixed(2)}`;
+    }
+    return path;
+  }
+
+  private createMiddle(height: number, width: number, pixelsPerMeter: number) {
+    const middleLine = new Konva.Line({
+      points: [0, height / 2, width, height / 2],
+      stroke: '#000000',
+      strokeWidth: 3,
+    });
+    this.layer().add(middleLine);
+
+    // Add center circle
+    const centerCircleRadius = 3 * pixelsPerMeter;
+    const centerCircle = new Konva.Circle({
+      x: width / 2,
+      y: height / 2,
+      radius: centerCircleRadius,
+      stroke: '#000000',
+      strokeWidth: 3,
+      fill: 'transparent',
+    });
+    this.layer().add(centerCircle);
+  }
+}
