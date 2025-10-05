@@ -78,7 +78,7 @@ import { HandballCourtRenderer } from './services/handball-court-renderer.servic
                     Draw Full Court (unchecked = half court - upper part only)
                   </mat-checkbox>
 
-                  @for (input of [pixelsPerMeter, height, width]; track input) {
+                  @for (input of [pixelsPerMeter, height]; track input) {
                     <div class="slider-group">
                       @switch (input) {
                         @case (pixelsPerMeter) {
@@ -89,11 +89,6 @@ import { HandballCourtRenderer } from './services/handball-court-renderer.servic
                         @case (height) {
                           <label for="height"
                             >Height (meters): {{ height() }}</label
-                          >
-                        }
-                        @case (width) {
-                          <label for="width"
-                            >Width (meters): {{ width() }}</label
                           >
                         }
                       }
@@ -187,7 +182,7 @@ export class TacticalBoardComponent implements OnDestroy {
   protected readonly konvaContainer =
     viewChild.required<ElementRef<HTMLDivElement>>('konvaContainer');
 
-  protected readonly pixelsPerMeter = signal(20);
+  protected readonly pixelsPerMeter = signal(30);
   protected readonly height = signal(30);
   protected readonly width = signal(20);
   protected readonly fullCourt = signal(false); // false = half court (upper part)
