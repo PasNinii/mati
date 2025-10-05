@@ -56,20 +56,9 @@ export class HandballZone {
     const leftPostX = this.centerX - halfGoal;
     const rightPostX = this.centerX + halfGoal;
 
-    // The zone extends toward the center of the field
-    // Top zone (yPosition=0): extends downward (yExtent > yPosition)
-    // Bottom zone (yPosition=height): extends upward (yExtent < yPosition)
-    const yExtent = this.isBottomZone ? this.yPosition - R : this.yPosition + R;
-
     const points: Point2D[] = [];
 
-    // Part 1: Left quarter circle
     points.push(...this.generateLeftArc(leftPostX, R));
-
-    // Part 2: Straight line connecting the arcs
-    points.push(...this.generateStraightLine(leftPostX, rightPostX, yExtent));
-
-    // Part 3: Right quarter circle
     points.push(...this.generateRightArc(rightPostX, R));
 
     return points;
@@ -95,27 +84,8 @@ export class HandballZone {
         ? this.yPosition - offsetY
         : this.yPosition + offsetY;
 
+      if (x < 0 || y < 0) continue;
       points.push({ x, y });
-    }
-
-    return points;
-  }
-
-  /**
-   * Generates points for the straight line section
-   */
-  private generateStraightLine(
-    leftPostX: number,
-    rightPostX: number,
-    yExtent: number,
-  ): Point2D[] {
-    const points: Point2D[] = [];
-    const segmentsForLine = this.numSegments / 4;
-
-    for (let i = 1; i <= segmentsForLine; i++) {
-      const t = i / segmentsForLine;
-      const x = leftPostX + t * (rightPostX - leftPostX);
-      points.push({ x, y: yExtent });
     }
 
     return points;
@@ -141,6 +111,7 @@ export class HandballZone {
         ? this.yPosition - offsetY
         : this.yPosition + offsetY;
 
+      if (x < 0 || y < 0) continue;
       points.push({ x, y });
     }
 
@@ -167,7 +138,8 @@ export class HandballZone {
         data: pathData,
         stroke: styles.zone9mColor,
         strokeWidth: styles.zoneLineWidth,
-        dash: [8, 6],
+        // Width & number of dashes can be adjusted as needed
+        dash: [16, 8],
       });
     }
   }
