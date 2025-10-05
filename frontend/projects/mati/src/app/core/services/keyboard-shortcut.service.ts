@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 
 /**
+ * TODO: rethink the whole shortcut system, there is something too complex about it
  * Simplified keyboard shortcut service
  * Acts as a thin coordinator for keyboard shortcuts
  */
