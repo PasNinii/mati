@@ -1,4 +1,4 @@
-import { Component, input, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { MatSliderModule } from '@angular/material/slider';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { FormsModule } from '@angular/forms';
@@ -10,22 +10,22 @@ import { BaseFilterComponent } from '../base-filter.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="slider-filter">
-      @if (label()) {
+      @if (filter().config().label) {
         <label class="slider-label"
-          >{{ label() }}: {{ internalValue() }}{{ unit() }}</label
+          >{{ filter().config().label }}: {{ filter().value() }}</label
         >
       }
       <mat-slider
-        [min]="min()"
-        [max]="max()"
-        [step]="step()"
+        [min]="filter().config().min ?? 0"
+        [max]="filter().config().max ?? 100"
+        [step]="filter().config().step ?? 1"
         [discrete]="true"
-        [showTickMarks]="showTickMarks()"
+        [showTickMarks]="false"
         color="primary"
       >
         <input
           matSliderThumb
-          [(ngModel)]="internalValue"
+          [ngModel]="filter().value()"
           (ngModelChange)="onValueChange($event)"
         />
       </mat-slider>
@@ -57,15 +57,4 @@ import { BaseFilterComponent } from '../base-filter.component';
     `,
   ],
 })
-export class SliderFilterComponent extends BaseFilterComponent<number> {
-  // Additional inputs specific to slider filter
-  min = input<number>(0);
-  max = input<number>(100);
-  step = input<number>(1);
-  unit = input<string>('');
-  showTickMarks = input<boolean>(false);
-
-  protected getDefaultValue(): number {
-    return 0;
-  }
-}
+export class SliderFilterComponent extends BaseFilterComponent<number> {}

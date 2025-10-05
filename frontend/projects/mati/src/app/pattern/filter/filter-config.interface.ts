@@ -32,6 +32,16 @@ export interface FilterGroup {
   filters: FilterConfig[];
 }
 
+/**
+ * Simplified filter group structure for rendering
+ * Contains only the structure needed by the UI - filter instances contain all other info
+ */
+export interface FilterGroupStructure {
+  id: string;
+  name: string;
+  filterIds: Array<{ id: string; type: FilterType }>;
+}
+
 export interface FilterState {
   [filterId: string]: any;
 }

@@ -12,10 +12,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatChipsModule } from '@angular/material/chips';
 import { FilterService } from '../../core/services/filter.service';
-import {
-  FilterGroup,
-  FilterState,
-} from '../../pattern/filter/filter-config.interface';
+import { FilterState } from '../../pattern/filter/filter-config.interface';
 import { FilterType } from '../../pattern/filter/filter-type.enum';
 import { TextFilterComponent } from '../../ui/filters/text-filter/text-filter.component';
 import { SelectFilterComponent } from '../../ui/filters/select-filter/select-filter.component';
@@ -55,9 +52,11 @@ import { SliderFilterComponent } from '../../ui/filters/slider-filter/slider-fil
               color="warn"
               (click)="clearAll()"
               type="button"
+              [title]="'Clear all filters (Ctrl+R)'"
             >
               <mat-icon>clear_all</mat-icon>
               Clear All
+              <span class="keyboard-hint">(Ctrl+R)</span>
             </button>
           }
           @if (showShare() && activeFiltersCount() > 0) {
@@ -83,69 +82,37 @@ import { SliderFilterComponent } from '../../ui/filters/slider-filter/slider-fil
               <h4 class="group-name">{{ group.name }}</h4>
             }
             <div class="filter-items">
-              @for (filterConfig of group.filters; track filterConfig.id) {
+              @for (filterItem of group.filterIds; track filterItem.id) {
                 <div class="filter-item">
-                  @switch (filterConfig.type) {
+                  @switch (filterItem.type) {
                     @case (FilterType.TEXT) {
                       <app-text-filter
-                        [id]="filterConfig.id"
-                        [label]="filterConfig.label"
-                        [placeholder]="filterConfig.placeholder || ''"
-                        [clearable]="filterConfig.clearable ?? true"
-                        [value]="getFilterValue(filterConfig.id)"
-                        (valueChange)="onFilterChange(filterConfig.id, $event)"
+                        [filter]="$any(getFilter(filterItem.id))"
                       />
                     }
                     @case (FilterType.SELECT) {
                       <app-select-filter
-                        [id]="filterConfig.id"
-                        [label]="filterConfig.label"
-                        [placeholder]="filterConfig.placeholder || ''"
-                        [options]="filterConfig.options || []"
-                        [clearable]="filterConfig.clearable ?? true"
-                        [value]="getFilterValue(filterConfig.id)"
-                        (valueChange)="onFilterChange(filterConfig.id, $event)"
+                        [filter]="$any(getFilter(filterItem.id))"
                       />
                     }
                     @case (FilterType.MULTI_SELECT) {
                       <app-multi-select-filter
-                        [id]="filterConfig.id"
-                        [label]="filterConfig.label"
-                        [options]="filterConfig.options || []"
-                        [clearable]="filterConfig.clearable ?? true"
-                        [value]="getFilterValue(filterConfig.id)"
-                        (valueChange)="onFilterChange(filterConfig.id, $event)"
+                        [filter]="$any(getFilter(filterItem.id))"
                       />
                     }
                     @case (FilterType.NUMBER) {
                       <app-number-filter
-                        [id]="filterConfig.id"
-                        [label]="filterConfig.label"
-                        [placeholder]="filterConfig.placeholder || ''"
-                        [min]="filterConfig.min"
-                        [max]="filterConfig.max"
-                        [clearable]="filterConfig.clearable ?? true"
-                        [value]="getFilterValue(filterConfig.id)"
-                        (valueChange)="onFilterChange(filterConfig.id, $event)"
+                        [filter]="$any(getFilter(filterItem.id))"
                       />
                     }
                     @case (FilterType.BOOLEAN) {
                       <app-boolean-filter
-                        [id]="filterConfig.id"
-                        [label]="filterConfig.label"
-                        [value]="getFilterValue(filterConfig.id)"
-                        [shortcut]="filterConfig.shortcut || ''"
-                        (valueChange)="onFilterChange(filterConfig.id, $event)"
+                        [filter]="$any(getFilter(filterItem.id))"
                       />
                     }
                     @case (FilterType.SLIDER) {
                       <app-slider-filter
-                        [id]="filterConfig.id"
-                        [label]="filterConfig.label"
-                        [min]="filterConfig.min ?? 0"
-                        [max]="filterConfig.max ?? 100"
-                        [value]="getFilterValue(filterConfig.id)"
-                        (valueChange)="onFilterChange(filterConfig.id, $event)"
+                        [filter]="$any(getFilter(filterItem.id))"
                       />
                     }
                   }
@@ -172,7 +139,7 @@ export class FilterComponent implements OnInit {
   filtersChanged = output<FilterState>();
 
   FilterType = FilterType;
-  filterGroups = this.filterService.getFilterGroups();
+  filterGroups = this.filterService.filterGroups;
   activeFiltersCount = this.filterService.activeFiltersCount;
 
   constructor() {
@@ -198,15 +165,8 @@ export class FilterComponent implements OnInit {
     });
   }
 
-  getFilterValue(filterId: string): any {
-    // Access the filters signal to make this reactive
-    const filtersMap = this.filterService.getFilters()();
-    const filter = filtersMap.get(filterId);
-    return filter?.value;
-  }
-
-  onFilterChange(filterId: string, value: any) {
-    this.filterService.updateFilter(filterId, value);
+  getFilter(filterId: string) {
+    return this.filterService.filters().get(filterId);
   }
 
   clearAll() {

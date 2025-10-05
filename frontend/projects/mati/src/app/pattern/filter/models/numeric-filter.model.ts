@@ -1,45 +1,49 @@
 import { BaseFilter } from './base-filter.model';
+import { FilterConfig } from '../filter-config.interface';
 
 /**
  * Numeric filter with increment/decrement support
  */
 export class NumericFilter extends BaseFilter<number> {
   protected getTypeDefaultValue(): number {
-    return this._config.min ?? 0;
+    return this.config().min ?? 0;
   }
 
   protected hasValueInternal(): boolean {
-    return this._value !== null && this._value !== undefined;
+    const val = this.value();
+    return val !== null && val !== undefined;
   }
 
   serialize(): string | null {
     if (!this.hasValue()) {
       return null;
     }
-    return String(this._value);
+    return String(this.value());
   }
 
   deserialize(value: string): void {
     const parsed = parseFloat(value);
-    this._value = isNaN(parsed) ? this.getDefaultValue() : parsed;
+    this.value.set(isNaN(parsed) ? this.getDefaultValue() : parsed);
   }
 
   /**
    * Increment the value by step amount
    */
   increment(): void {
-    const step = this._config.step ?? 1;
-    const max = this._config.max ?? Infinity;
-    this._value = Math.min(this._value + step, max);
+    const cfg = this.config();
+    const step = cfg.step ?? 1;
+    const max = cfg.max ?? Infinity;
+    this.value.update((v) => Math.min(v + step, max));
   }
 
   /**
    * Decrement the value by step amount
    */
   decrement(): void {
-    const step = this._config.step ?? 1;
-    const min = this._config.min ?? -Infinity;
-    this._value = Math.max(this._value - step, min);
+    const cfg = this.config();
+    const step = cfg.step ?? 1;
+    const min = cfg.min ?? -Infinity;
+    this.value.update((v) => Math.max(v - step, min));
   }
 
   /**
@@ -51,26 +55,20 @@ export class NumericFilter extends BaseFilter<number> {
     },
     onUpdate: () => void,
   ): void {
-    if (this._config.shortcuts?.increment) {
-      this.registerShortcut(
-        shortcutService,
-        this._config.shortcuts.increment,
-        () => {
-          this.increment();
-          onUpdate();
-        },
-      );
+    const cfg = this.config();
+
+    if (cfg.shortcuts?.increment) {
+      this.registerShortcut(shortcutService, cfg.shortcuts.increment, () => {
+        this.increment();
+        onUpdate();
+      });
     }
 
-    if (this._config.shortcuts?.decrement) {
-      this.registerShortcut(
-        shortcutService,
-        this._config.shortcuts.decrement,
-        () => {
-          this.decrement();
-          onUpdate();
-        },
-      );
+    if (cfg.shortcuts?.decrement) {
+      this.registerShortcut(shortcutService, cfg.shortcuts.decrement, () => {
+        this.decrement();
+        onUpdate();
+      });
     }
   }
 }

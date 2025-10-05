@@ -2,13 +2,14 @@ import {
   afterRenderEffect,
   Component,
   ElementRef,
+  inject,
   linkedSignal,
   OnDestroy,
   signal,
   untracked,
   viewChild,
 } from '@angular/core';
-import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatDrawer, MatSidenavModule } from '@angular/material/sidenav';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 
@@ -24,6 +25,7 @@ import {
 } from './services/handball-court-renderer.service';
 import { FilterComponent } from '../../pattern/filter';
 import { FilterState } from '../../pattern/filter/filter-config.interface';
+import { KeyboardShortcutService } from '../../core/services/keyboard-shortcut.service';
 
 @Component({
   selector: 'hostiles-tactical-board',
@@ -39,6 +41,7 @@ import { FilterState } from '../../pattern/filter/filter-config.interface';
             color="primary"
             class="toggle-drawer-btn"
             (click)="drawer.toggle()"
+            [title]="'Toggle settings (Ctrl+D)'"
             aria-label="Toggle settings"
           >
             <mat-icon>{{ drawer.opened ? 'close' : 'settings' }}</mat-icon>
@@ -65,8 +68,11 @@ import { FilterState } from '../../pattern/filter/filter-config.interface';
   `,
 })
 export class TacticalBoardComponent implements OnDestroy {
+  private readonly keyboardShortcutService = inject(KeyboardShortcutService);
+
   protected readonly konvaContainer =
     viewChild.required<ElementRef<HTMLDivElement>>('konvaContainer');
+  protected readonly drawer = viewChild.required<MatDrawer>('drawer');
 
   protected readonly pixelsPerMeter = signal(30);
   protected readonly height = signal(30);
@@ -93,6 +99,11 @@ export class TacticalBoardComponent implements OnDestroy {
   private courtRenderer?: HandballCourtRenderer;
 
   constructor() {
+    // Register keyboard shortcut to toggle drawer (Ctrl+D)
+    this.keyboardShortcutService.register('ctrl+d', () => {
+      this.drawer().toggle();
+    });
+
     afterRenderEffect(() => {
       [
         this.pixelsPerMeter(),

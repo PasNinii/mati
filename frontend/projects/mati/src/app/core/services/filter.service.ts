@@ -12,48 +12,58 @@ import { Observable, map } from 'rxjs';
 import {
   FilterConfig,
   FilterGroup,
+  FilterGroupStructure,
   FilterState,
 } from '../../pattern/filter/filter-config.interface';
+import { FilterType } from '../../pattern/filter/filter-type.enum';
 import { KeyboardShortcutService } from './keyboard-shortcut.service';
 import { BaseFilter } from '../../pattern/filter/models';
 import { createFilter } from '../../pattern/filter/models/filter.factory';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable({ providedIn: 'root' })
 export class FilterService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly keyboardShortcutService = inject(KeyboardShortcutService);
 
-  private filterConfigs = signal<FilterGroup[]>([]);
-  private filters = signal<Map<string, BaseFilter>>(new Map());
+  // Filters map - centralized source of truth containing all filter instances
+  public readonly filters = signal<Map<string, BaseFilter>>(new Map());
+
+  // Simplified group structure - only contains structure for rendering, not full configs
+  public readonly filterGroups = signal<FilterGroupStructure[]>([]);
 
   // Computed signal for filter state (returns actual values, not serialized)
-  readonly filterState = computed<FilterState>(() => {
+  public readonly filterState = computed<FilterState>(() => {
     const state: FilterState = {};
     this.filters().forEach((filter) => {
       if (filter.hasValue()) {
-        state[filter.id] = filter.value;
+        state[filter.id] = filter.value();
       }
     });
     return state;
   });
 
   // Computed signal for active filters count
-  readonly activeFiltersCount = computed(
+  public readonly activeFiltersCount = computed(
     () => Object.keys(this.filterState()).length,
   );
 
   // Computed signal for checking if any filter is active
-  readonly hasActiveFilters = computed(() => this.activeFiltersCount() > 0);
+  public readonly hasActiveFilters = computed(
+    () => this.activeFiltersCount() > 0,
+  );
 
   constructor() {
     // Effect to sync filter state to URL in real-time
     effect(() => {
       const state = this.filterState();
       this.updateUrlParams(state);
+    });
+
+    // Register global keyboard shortcut to clear all filters
+    this.keyboardShortcutService.register('ctrl+r', () => {
+      this.clearAllFilters();
     });
   }
 
@@ -65,7 +75,6 @@ export class FilterService {
   ): Observable<FilterGroup[]> {
     return this.http.get<FilterGroup[]>(configPath).pipe(
       map((groups) => {
-        this.filterConfigs.set(groups);
         this.initializeFilters(groups);
         return groups;
       }),
@@ -77,29 +86,33 @@ export class FilterService {
    */
   private initializeFilters(groups: FilterGroup[]): void {
     const filterMap = new Map<string, BaseFilter>();
+    const groupStructures: FilterGroupStructure[] = [];
 
     groups.forEach((group) => {
+      const filterIds: Array<{ id: string; type: FilterType }> = [];
+
       group.filters.forEach((config) => {
         // Use factory to create appropriate filter type
         const filter = createFilter(config);
         filterMap.set(config.id, filter);
+        filterIds.push({ id: config.id, type: config.type });
 
         // Let each filter register its own shortcuts
         filter.initShortcuts(this.keyboardShortcutService, () => {
-          // Update signal when shortcut triggers change
-          this.filters.update((map) => new Map(map));
+          // Trigger is handled by filter's value signal
+          // No need to update the map
         });
+      });
+
+      groupStructures.push({
+        id: group.id,
+        name: group.name,
+        filterIds,
       });
     });
 
     this.filters.set(filterMap);
-  }
-
-  /**
-   * Get all filter groups
-   */
-  getFilterGroups(): Signal<FilterGroup[]> {
-    return this.filterConfigs;
+    this.filterGroups.set(groupStructures);
   }
 
   /**
@@ -110,45 +123,20 @@ export class FilterService {
   }
 
   /**
-   * Get all filters as a map
-   */
-  getFilters(): Signal<Map<string, BaseFilter>> {
-    return this.filters;
-  }
-
-  /**
    * Update a filter's value
    */
   updateFilter(filterId: string, value: any): void {
     const filter = this.getFilter(filterId);
     if (filter) {
-      filter.value = value;
-      this.filters.update((map) => new Map(map));
+      filter.value.set(value);
+      // No need to update the filters map as the value signal will trigger reactivity
     }
   }
 
-  /**
-   * Clear a specific filter
-   */
-  clearFilter(filterId: string): void {
-    const filter = this.getFilter(filterId);
-    if (filter) {
-      filter.clear();
-      this.filters.update((map) => new Map(map));
-    }
-  }
-
-  /**
-   * Clear all filters
-   */
-  clearAllFilters(): void {
+  public clearAllFilters(): void {
     this.filters().forEach((filter) => filter.clear());
-    this.filters.update((map) => new Map(map));
   }
 
-  /**
-   * Update URL query parameters with current filter state
-   */
   private updateUrlParams(state: FilterState): void {
     const queryParams: any = {};
 
@@ -172,10 +160,7 @@ export class FilterService {
     });
   }
 
-  /**
-   * Load filters from current URL query parameters
-   */
-  loadFiltersFromUrl(): void {
+  public loadFiltersFromUrl(): void {
     this.route.queryParams.subscribe((params) => {
       // Load individual filter parameters
       Object.keys(params).forEach((key) => {
@@ -185,9 +170,7 @@ export class FilterService {
           filter.deserialize(params[key]);
         }
       });
-
-      // Trigger update to notify subscribers
-      this.filters.update((map) => new Map(map));
+      // No need to update the filters map as the value signals will trigger reactivity
     });
   }
 }

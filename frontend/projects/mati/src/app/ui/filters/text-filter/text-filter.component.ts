@@ -1,4 +1,4 @@
-import { Component, input, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
@@ -18,17 +18,17 @@ import { BaseFilterComponent } from '../base-filter.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <mat-form-field appearance="outline" class="text-filter">
-      @if (label()) {
-        <mat-label>{{ label() }}</mat-label>
+      @if (filter().config().label) {
+        <mat-label>{{ filter().config().label }}</mat-label>
       }
       <input
         matInput
         type="text"
-        [(ngModel)]="internalValue"
+        [ngModel]="filter().value()"
         (ngModelChange)="onValueChange($event)"
-        [placeholder]="placeholder()"
+        [placeholder]="filter().config().placeholder || ''"
       />
-      @if (clearable() && internalValue()) {
+      @if (filter().config().clearable !== false && filter().value()) {
         <button
           matSuffix
           mat-icon-button
@@ -49,12 +49,4 @@ import { BaseFilterComponent } from '../base-filter.component';
     `,
   ],
 })
-export class TextFilterComponent extends BaseFilterComponent<string> {
-  // Additional inputs specific to text filter
-  placeholder = input<string>('');
-  clearable = input<boolean>(true);
-
-  protected getDefaultValue(): string {
-    return '';
-  }
-}
+export class TextFilterComponent extends BaseFilterComponent<string | null> {}

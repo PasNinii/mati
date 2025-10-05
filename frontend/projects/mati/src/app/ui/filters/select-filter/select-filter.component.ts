@@ -1,10 +1,9 @@
-import { Component, input, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { FormsModule } from '@angular/forms';
-import { FilterOption } from '../../../pattern/filter/filter-config.interface';
 import { BaseFilterComponent } from '../base-filter.component';
 
 @Component({
@@ -19,21 +18,21 @@ import { BaseFilterComponent } from '../base-filter.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <mat-form-field appearance="outline" class="select-filter">
-      @if (label()) {
-        <mat-label>{{ label() }}</mat-label>
+      @if (filter().config().label) {
+        <mat-label>{{ filter().config().label }}</mat-label>
       }
       <mat-select
-        [(ngModel)]="internalValue"
+        [ngModel]="filter().value()"
         (ngModelChange)="onValueChange($event)"
-        [placeholder]="placeholder()"
+        [placeholder]="filter().config().placeholder || 'Select...'"
       >
-        @for (option of options(); track option.value) {
+        @for (option of filter().config().options || []; track option.value) {
           <mat-option [value]="option.value">
             {{ option.label }}
           </mat-option>
         }
       </mat-select>
-      @if (clearable() && internalValue() !== null) {
+      @if (filter().config().clearable !== false && filter().value() !== null) {
         <button
           matSuffix
           mat-icon-button
@@ -54,13 +53,4 @@ import { BaseFilterComponent } from '../base-filter.component';
     `,
   ],
 })
-export class SelectFilterComponent extends BaseFilterComponent<any> {
-  // Additional inputs specific to select filter
-  placeholder = input<string>('Select...');
-  options = input<FilterOption[]>([]);
-  clearable = input<boolean>(true);
-
-  protected getDefaultValue(): any {
-    return null;
-  }
-}
+export class SelectFilterComponent extends BaseFilterComponent<any> {}

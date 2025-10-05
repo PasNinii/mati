@@ -1,4 +1,4 @@
-import { Component, input, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
@@ -18,19 +18,19 @@ import { BaseFilterComponent } from '../base-filter.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <mat-form-field appearance="outline" class="number-filter">
-      @if (label()) {
-        <mat-label>{{ label() }}</mat-label>
+      @if (filter().config().label) {
+        <mat-label>{{ filter().config().label }}</mat-label>
       }
       <input
         matInput
         type="number"
-        [(ngModel)]="internalValue"
+        [ngModel]="filter().value()"
         (ngModelChange)="onValueChange($event)"
-        [placeholder]="placeholder()"
-        [attr.min]="min()"
-        [attr.max]="max()"
+        [placeholder]="filter().config().placeholder || ''"
+        [attr.min]="filter().config().min"
+        [attr.max]="filter().config().max"
       />
-      @if (clearable() && internalValue() !== null) {
+      @if (filter().config().clearable !== false && filter().value() !== null) {
         <button
           matSuffix
           mat-icon-button
@@ -51,14 +51,4 @@ import { BaseFilterComponent } from '../base-filter.component';
     `,
   ],
 })
-export class NumberFilterComponent extends BaseFilterComponent<number | null> {
-  // Additional inputs specific to number filter
-  placeholder = input<string>('');
-  min = input<number | undefined>(undefined);
-  max = input<number | undefined>(undefined);
-  clearable = input<boolean>(true);
-
-  protected getDefaultValue(): number | null {
-    return null;
-  }
-}
+export class NumberFilterComponent extends BaseFilterComponent<number | null> {}

@@ -1,4 +1,5 @@
 import { BaseFilter } from './base-filter.model';
+import { FilterConfig } from '../filter-config.interface';
 
 /**
  * Array filter for multi-select inputs
@@ -9,7 +10,8 @@ export class ArrayFilter<T = unknown> extends BaseFilter<T[]> {
   }
 
   protected hasValueInternal(): boolean {
-    return Array.isArray(this._value) && this._value.length > 0;
+    const val = this.value();
+    return Array.isArray(val) && val.length > 0;
   }
 
   serialize(): string | null {
@@ -17,43 +19,50 @@ export class ArrayFilter<T = unknown> extends BaseFilter<T[]> {
       return null;
     }
     // Join array values with comma
-    return this._value.map((v) => String(v)).join(',');
+    return this.value()
+      .map((v) => String(v))
+      .join(',');
   }
 
   deserialize(value: string): void {
     if (!value || value.trim() === '') {
-      this._value = [];
+      this.value.set([]);
       return;
     }
     // Split comma-separated values
-    this._value = value.split(',').map((v) => v.trim() as T);
+    this.value.set(value.split(',').map((v) => v.trim() as T));
   }
 
   /**
    * Add a value to the array
    */
   add(value: T): void {
-    if (!this._value.includes(value)) {
-      this._value = [...this._value, value];
-    }
+    this.value.update((arr) => {
+      if (!arr.includes(value)) {
+        return [...arr, value];
+      }
+      return arr;
+    });
   }
 
   /**
    * Remove a value from the array
    */
   remove(value: T): void {
-    this._value = this._value.filter((v) => v !== value);
+    this.value.update((arr) => arr.filter((v) => v !== value));
   }
 
   /**
    * Toggle a value in the array
    */
   toggle(value: T): void {
-    if (this._value.includes(value)) {
-      this.remove(value);
-    } else {
-      this.add(value);
-    }
+    this.value.update((arr) => {
+      if (arr.includes(value)) {
+        return arr.filter((v) => v !== value);
+      } else {
+        return [...arr, value];
+      }
+    });
   }
 
   /**

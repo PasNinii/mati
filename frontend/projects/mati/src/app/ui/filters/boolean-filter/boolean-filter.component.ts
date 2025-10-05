@@ -1,4 +1,4 @@
-import { Component, input, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { BaseFilterComponent } from '../base-filter.component';
@@ -10,15 +10,15 @@ import { BaseFilterComponent } from '../base-filter.component';
   template: `
     <div class="boolean-filter">
       <mat-slide-toggle
-        [(ngModel)]="internalValue"
+        [ngModel]="filter().value()"
         (ngModelChange)="onValueChange($event)"
         color="primary"
         [disableRipple]="false"
       >
         <span class="filter-label">
-          {{ label() }}
-          @if (shortcut()) {
-            <kbd class="shortcut-badge">{{ shortcut() }}</kbd>
+          {{ filter().config().label }}
+          @if (filter().config().shortcut) {
+            <kbd class="shortcut-badge">{{ filter().config().shortcut }}</kbd>
           }
         </span>
       </mat-slide-toggle>
@@ -60,11 +60,4 @@ import { BaseFilterComponent } from '../base-filter.component';
     `,
   ],
 })
-export class BooleanFilterComponent extends BaseFilterComponent<boolean> {
-  // Additional inputs specific to boolean filter
-  shortcut = input<string>(''); // Keyboard shortcut to display
-
-  protected getDefaultValue(): boolean {
-    return false;
-  }
-}
+export class BooleanFilterComponent extends BaseFilterComponent<boolean> {}

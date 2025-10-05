@@ -1,18 +1,24 @@
+import { signal, computed, Signal, WritableSignal } from '@angular/core';
 import { FilterConfig } from '../filter-config.interface';
 import { FilterType } from '../filter-type.enum';
 
 /**
  * Abstract base class for all filter types
  * Provides common functionality for serialization, deserialization, and keyboard shortcuts
+ * Config and value are stored as signals for reactivity
  */
 export abstract class BaseFilter<T = unknown> {
-  protected _config: FilterConfig;
-  protected _value: T;
+  // Config as a readonly signal - centralized source of truth
+  public readonly config: Signal<FilterConfig>;
+
+  // Value as a writable signal - centralized reactive state
+  public readonly value: WritableSignal<T>;
+
   private shortcutCleanup?: () => void;
 
   constructor(config: FilterConfig) {
-    this._config = config;
-    this._value = this.getDefaultValue();
+    this.config = signal(config);
+    this.value = signal(this.getDefaultValue());
   }
 
   /**
@@ -53,35 +59,27 @@ export abstract class BaseFilter<T = unknown> {
     this.shortcutCleanup?.();
   }
 
-  get config(): FilterConfig {
-    return this._config;
-  }
-
-  get value(): T {
-    return this._value;
-  }
-
-  set value(val: T) {
-    this._value = val;
-  }
-
+  /**
+   * Convenience getters for commonly accessed config properties
+   */
   get id(): string {
-    return this._config.id;
+    return this.config().id;
   }
 
   get label(): string {
-    return this._config.label;
+    return this.config().label;
   }
 
   get type(): FilterType {
-    return this._config.type;
+    return this.config().type;
   }
 
   /**
    * Get the default value for this filter based on config
    */
   protected getDefaultValue(): T {
-    return (this._config.defaultValue ?? this.getTypeDefaultValue()) as T;
+    const cfg = this.config();
+    return (cfg.defaultValue ?? this.getTypeDefaultValue()) as T;
   }
 
   /**
@@ -95,16 +93,15 @@ export abstract class BaseFilter<T = unknown> {
    * Subclasses can override for custom logic
    */
   hasValue(): boolean {
+    const cfg = this.config();
+
     // Non-clearable filters always have a value
-    if (this._config.clearable === false) {
+    if (cfg.clearable === false) {
       return true;
     }
 
     // Boolean filters with a default value should always have a value
-    if (
-      this._config.type === 'boolean' &&
-      this._config.defaultValue !== undefined
-    ) {
+    if (cfg.type === 'boolean' && cfg.defaultValue !== undefined) {
       return true;
     }
 
@@ -122,7 +119,7 @@ export abstract class BaseFilter<T = unknown> {
    * Clear/reset the filter to its default value
    */
   clear(): void {
-    this._value = this.getDefaultValue();
+    this.value.set(this.getDefaultValue());
   }
 
   /**
@@ -143,7 +140,7 @@ export abstract class BaseFilter<T = unknown> {
   toJSON(): { id: string; value: T } {
     return {
       id: this.id,
-      value: this._value,
+      value: this.value(),
     };
   }
 }

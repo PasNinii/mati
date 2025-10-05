@@ -10,25 +10,26 @@ export class BooleanFilter extends BaseFilter<boolean> {
   }
 
   protected hasValueInternal(): boolean {
-    return this._value !== null && this._value !== undefined;
+    const val = this.value();
+    return val !== null && val !== undefined;
   }
 
   serialize(): string | null {
     if (!this.hasValue()) {
       return null;
     }
-    return this._value ? 'true' : 'false';
+    return this.value() ? 'true' : 'false';
   }
 
   deserialize(value: string): void {
-    this._value = value === 'true' || value === '1';
+    this.value.set(value === 'true' || value === '1');
   }
 
   /**
    * Toggle the boolean value
    */
   toggle(): void {
-    this._value = !this._value;
+    this.value.update((v) => !v);
   }
 
   /**
@@ -40,8 +41,9 @@ export class BooleanFilter extends BaseFilter<boolean> {
     },
     onUpdate: () => void,
   ): void {
-    if (this._config.shortcut) {
-      this.registerShortcut(shortcutService, this._config.shortcut, () => {
+    const cfg = this.config();
+    if (cfg.shortcut) {
+      this.registerShortcut(shortcutService, cfg.shortcut, () => {
         this.toggle();
         onUpdate();
       });
