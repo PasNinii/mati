@@ -4,7 +4,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { BaseFilterComponent } from '../base-filter.component';
 
 @Component({
-  selector: 'app-boolean-filter',
+  selector: 'mati-boolean-filter',
   imports: [MatSlideToggleModule, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `

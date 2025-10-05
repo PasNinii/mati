@@ -15,10 +15,7 @@ import {
   DEFAULT_COURT_CONFIG,
   DEFAULT_COURT_STYLES,
 } from '../models/court-config.interface';
-import {
-  HandballCourtRenderer,
-  DEFAULT_PLAYER_STYLES,
-} from './handball-court-renderer.service';
+import { HandballCourtRenderer } from './handball-court-renderer.service';
 import { FilterService } from '../../../core/services/filter.service';
 
 @Injectable()
@@ -74,13 +71,11 @@ export class TacticalBoardStateService implements OnDestroy {
   constructor() {
     // Watch for court configuration changes and re-render
     effect(() => {
-      [
-        this.pixelsPerMeter(),
-        this.height(),
-        this.width(),
-        this.fullCourt(),
-        this.konvaContainer,
-      ];
+      // Track these signals to trigger re-render on changes
+      this.pixelsPerMeter();
+      this.height();
+      this.width();
+      this.fullCourt();
 
       untracked(() => {
         if (this.konvaContainer) {
@@ -139,13 +134,11 @@ export class TacticalBoardStateService implements OnDestroy {
 
       const config = this.buildCourtConfig();
       const styles = DEFAULT_COURT_STYLES;
-      const playerStyles = DEFAULT_PLAYER_STYLES;
 
       this.courtRenderer = new HandballCourtRenderer(
         this.layer(),
         config,
         styles,
-        playerStyles,
       );
 
       // Set initial showCoordinates state

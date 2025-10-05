@@ -33,13 +33,7 @@ export class HandballCourtRenderer {
   private entityShapes: Map<string, Konva.Group> = new Map();
   private showCoordinates: boolean = false;
 
-  constructor(
-    layer: Konva.Layer,
-    config: CourtConfig,
-    styles: CourtStyles,
-    playerStyles: PlayerStyles = DEFAULT_PLAYER_STYLES,
-    ballStyles: BallStyles = DEFAULT_BALL_STYLES,
-  ) {
+  constructor(layer: Konva.Layer, config: CourtConfig, styles: CourtStyles) {
     this.layer = layer;
     this.config = config;
     this.styles = styles;
@@ -283,6 +277,7 @@ export class HandballCourtRenderer {
   /**
    * Gets all entities of a specific type
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getEntities<T extends CourtEntity>(type: new (...args: any[]) => T): T[] {
     return this.entities.filter((e) => e instanceof type) as T[];
   }

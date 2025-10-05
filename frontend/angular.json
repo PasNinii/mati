@@ -15,7 +15,7 @@
       },
       "root": "projects/mati",
       "sourceRoot": "projects/mati/src",
-      "prefix": "hostiles",
+      "prefix": "mati",
       "architect": {
         "build": {
           "builder": "@angular/build:application",

@@ -1,5 +1,3 @@
-import Konva from 'konva';
-
 /**
  * Represents a point in 2D space
  */

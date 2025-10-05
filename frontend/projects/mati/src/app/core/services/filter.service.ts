@@ -29,7 +29,12 @@ export class FilterService {
     const state: FilterState = {};
     this.filters().forEach((filter) => {
       if (filter.hasValue()) {
-        state[filter.id] = filter.value();
+        state[filter.id] = filter.value() as
+          | string
+          | number
+          | boolean
+          | string[]
+          | number[];
       }
     });
     return state;

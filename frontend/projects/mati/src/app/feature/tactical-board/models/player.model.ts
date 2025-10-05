@@ -177,12 +177,13 @@ export class Player extends CourtEntity {
         // Could animate a shot
         console.log(`${this.getLabel()} shoots`);
         break;
-      case 'moveTo':
+      case 'moveTo': {
         // Could animate movement to a position
         const [x, y] = args as [number, number];
         console.log(`${this.getLabel()} moves to (${x}, ${y})`);
         this.updateCoordinates(x, y);
         break;
+      }
       case 'highlight':
         // Could highlight the player temporarily
         console.log(`${this.getLabel()} highlighted`);

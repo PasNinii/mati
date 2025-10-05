@@ -16,7 +16,7 @@ import { FilterService } from '../../core/services/filter.service';
 import { FilterState } from '../../pattern/filter/filter-config.interface';
 
 @Component({
-  selector: 'app-filter',
+  selector: 'mati-filter',
   imports: [
     NgComponentOutlet,
     MatButtonModule,

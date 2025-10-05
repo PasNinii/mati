@@ -5,7 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { ThemeService } from './core/services/theme.service';
 
 @Component({
-  selector: 'hostiles-root',
+  selector: 'mati-root',
   imports: [RouterOutlet, MatButtonModule, MatIconModule],
   template: `
     <div class="app-container">

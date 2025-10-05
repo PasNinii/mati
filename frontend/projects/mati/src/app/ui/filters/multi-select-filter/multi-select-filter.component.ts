@@ -7,7 +7,7 @@ import { FormsModule } from '@angular/forms';
 import { BaseFilterComponent } from '../base-filter.component';
 
 @Component({
-  selector: 'app-multi-select-filter',
+  selector: 'mati-multi-select-filter',
   imports: [
     MatFormFieldModule,
     MatSelectModule,
@@ -55,4 +55,6 @@ import { BaseFilterComponent } from '../base-filter.component';
     `,
   ],
 })
-export class MultiSelectFilterComponent extends BaseFilterComponent<any[]> {}
+export class MultiSelectFilterComponent extends BaseFilterComponent<
+  unknown[]
+> {}

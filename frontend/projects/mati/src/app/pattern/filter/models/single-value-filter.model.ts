@@ -1,9 +1,9 @@
 import { Type } from '@angular/core';
 import { BaseFilter } from './base-filter.model';
-import { FilterConfig } from '../filter-config.interface';
 import { TextFilterComponent } from '../../../ui/filters/text-filter/text-filter.component';
 import { SelectFilterComponent } from '../../../ui/filters/select-filter/select-filter.component';
 import { NumberFilterComponent } from '../../../ui/filters/number-filter/number-filter.component';
+import { BaseFilterComponent } from '../../../ui/filters';
 
 /**
  * Base class for single value filters
@@ -61,26 +61,30 @@ abstract class BaseSingleValueFilter<
  * Text filter for string inputs
  */
 export class TextFilter extends BaseSingleValueFilter<string> {
-  public readonly component: Type<any> = TextFilterComponent;
+  public override readonly component: Type<BaseFilterComponent<string | null>> =
+    TextFilterComponent as Type<BaseFilterComponent<string | null>>;
 }
 
 /**
  * Select filter for dropdown selection
  */
 export class SelectFilter extends BaseSingleValueFilter<string | number> {
-  public readonly component: Type<any> = SelectFilterComponent;
+  public override readonly component: Type<
+    BaseFilterComponent<string | number | null>
+  > = SelectFilterComponent as Type<
+    BaseFilterComponent<string | number | null>
+  >;
 }
 
 /**
  * Number filter for numeric inputs
  */
 export class NumberFilter extends BaseSingleValueFilter<number> {
-  public readonly component: Type<any> = NumberFilterComponent;
+  public override readonly component: Type<BaseFilterComponent<number | null>> =
+    NumberFilterComponent as Type<BaseFilterComponent<number | null>>;
 }
 
 // Keep the generic one for backwards compatibility
 export class SingleValueFilter<
   T extends string | number = string | number,
-> extends BaseSingleValueFilter<T> {
-  public readonly component: Type<any> = TextFilterComponent; // Default to text
-}
+> extends BaseSingleValueFilter<T> {}

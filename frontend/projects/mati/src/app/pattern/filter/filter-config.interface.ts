@@ -2,7 +2,7 @@ import { FilterType } from './filter-type.enum';
 
 export interface FilterOption {
   label: string;
-  value: any;
+  value: string | number | boolean;
 }
 
 export interface FilterConfig {
@@ -14,7 +14,7 @@ export interface FilterConfig {
   min?: number;
   max?: number;
   step?: number;
-  defaultValue?: any;
+  defaultValue?: string | number | boolean | string[] | number[];
   required?: boolean;
   multiple?: boolean;
   clearable?: boolean;
@@ -43,5 +43,5 @@ export interface FilterGroupStructure {
 }
 
 export interface FilterState {
-  [filterId: string]: any;
+  [filterId: string]: string | number | boolean | string[] | number[];
 }

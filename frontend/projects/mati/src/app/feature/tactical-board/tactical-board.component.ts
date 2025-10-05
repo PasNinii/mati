@@ -15,7 +15,7 @@ import { KeyboardShortcutService } from '../../core/services/keyboard-shortcut.s
 import { TacticalBoardStateService } from './services';
 
 @Component({
-  selector: 'hostiles-tactical-board',
+  selector: 'mati-tactical-board',
   imports: [MatSidenavModule, MatButtonModule, MatIconModule, FilterComponent],
   providers: [TacticalBoardStateService],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -43,7 +43,7 @@ import { TacticalBoardStateService } from './services';
         <div class="drawer-content">
           <h2 class="drawer-title">Board Configuration</h2>
 
-          <app-filter
+          <mati-filter
             [configPath]="'assets/filters/tactical-board-filters.json'"
             [showGroupNames]="true"
             [showClearAll]="false"

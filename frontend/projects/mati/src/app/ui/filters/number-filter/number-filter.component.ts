@@ -7,7 +7,7 @@ import { FormsModule } from '@angular/forms';
 import { BaseFilterComponent } from '../base-filter.component';
 
 @Component({
-  selector: 'app-number-filter',
+  selector: 'mati-number-filter',
   imports: [
     MatFormFieldModule,
     MatInputModule,

@@ -7,7 +7,7 @@ import { FormsModule } from '@angular/forms';
 import { BaseFilterComponent } from '../base-filter.component';
 
 @Component({
-  selector: 'app-select-filter',
+  selector: 'mati-select-filter',
   imports: [
     MatFormFieldModule,
     MatSelectModule,
@@ -53,4 +53,6 @@ import { BaseFilterComponent } from '../base-filter.component';
     `,
   ],
 })
-export class SelectFilterComponent extends BaseFilterComponent<any> {}
+export class SelectFilterComponent extends BaseFilterComponent<
+  string | number | null
+> {}

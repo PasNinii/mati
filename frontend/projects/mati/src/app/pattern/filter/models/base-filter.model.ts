@@ -1,6 +1,5 @@
 import { signal, Signal, WritableSignal, Type } from '@angular/core';
 import { FilterConfig } from '../filter-config.interface';
-import { FilterType } from '../filter-type.enum';
 import { BaseFilterComponent } from '../../../ui/filters';
 
 /**
@@ -17,7 +16,8 @@ export abstract class BaseFilter<T = unknown> {
   public readonly value: WritableSignal<T>;
 
   // Component to render this filter - defined by subclasses
-  public abstract readonly component: Type<BaseFilterComponent>;
+  public readonly component: Type<BaseFilterComponent<T>> =
+    BaseFilterComponent as Type<BaseFilterComponent<T>>;
 
   constructor(config: FilterConfig) {
     this.config = signal(config);

@@ -1,13 +1,14 @@
 import { Type } from '@angular/core';
 import { BaseFilter } from './base-filter.model';
-import { FilterConfig } from '../filter-config.interface';
+import { BaseFilterComponent } from '../../../ui/filters/base-filter.component';
 import { SliderFilterComponent } from '../../../ui/filters/slider-filter/slider-filter.component';
 
 /**
  * Numeric filter with increment/decrement support
  */
 export class NumericFilter extends BaseFilter<number> {
-  public readonly component: Type<any> = SliderFilterComponent;
+  public override readonly component: Type<BaseFilterComponent<number>> =
+    SliderFilterComponent as Type<BaseFilterComponent<number>>;
 
   protected getTypeDefaultValue(): number {
     return this.config().min ?? 0;

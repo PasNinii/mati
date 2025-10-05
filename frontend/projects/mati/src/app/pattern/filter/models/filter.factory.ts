@@ -16,22 +16,22 @@ import {
 export function createFilter(config: FilterConfig): BaseFilter {
   switch (config.type) {
     case FilterType.BOOLEAN:
-      return new BooleanFilter(config);
+      return new BooleanFilter(config) as BaseFilter;
 
     case FilterType.SLIDER:
-      return new NumericFilter(config);
+      return new NumericFilter(config) as BaseFilter;
 
     case FilterType.NUMBER:
-      return new NumberFilter(config);
+      return new NumberFilter(config) as BaseFilter;
 
     case FilterType.MULTI_SELECT:
-      return new ArrayFilter(config);
+      return new ArrayFilter(config) as BaseFilter;
 
     case FilterType.SELECT:
-      return new SelectFilter(config);
+      return new SelectFilter(config) as BaseFilter;
 
     case FilterType.TEXT:
     default:
-      return new TextFilter(config);
+      return new TextFilter(config) as BaseFilter;
   }
 }

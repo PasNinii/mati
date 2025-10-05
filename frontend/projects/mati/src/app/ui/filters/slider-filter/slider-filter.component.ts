@@ -5,13 +5,13 @@ import { FormsModule } from '@angular/forms';
 import { BaseFilterComponent } from '../base-filter.component';
 
 @Component({
-  selector: 'app-slider-filter',
+  selector: 'mati-slider-filter',
   imports: [MatSliderModule, MatFormFieldModule, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="slider-filter">
       @if (filter().config().label) {
-        <label class="slider-label"
+        <label class="slider-label" [for]="'slider-' + filter().config().id"
           >{{ filter().config().label }}: {{ filter().value() }}</label
         >
       }
@@ -25,6 +25,7 @@ import { BaseFilterComponent } from '../base-filter.component';
       >
         <input
           matSliderThumb
+          [id]="'slider-' + filter().config().id"
           [ngModel]="filter().value()"
           (ngModelChange)="onValueChange($event)"
         />
