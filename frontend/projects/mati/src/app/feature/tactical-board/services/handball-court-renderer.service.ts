@@ -58,11 +58,13 @@ export class HandballCourtRenderer {
     const height = this.config.heightM * this.config.pixelsPerMeter;
     const centerX = width / 2;
 
-    // Top goal area (y = 0)
+    // Top goal area (y = 0) - always render
     this.renderSingleGoalArea(centerX, 0, false);
 
-    // Bottom goal area (y = height)
-    this.renderSingleGoalArea(centerX, height, true);
+    // Bottom goal area (y = height) - only render in full court mode
+    if (!this.config.halfCourt) {
+      this.renderSingleGoalArea(centerX, height, true);
+    }
   }
 
   /**
@@ -127,6 +129,12 @@ export class HandballCourtRenderer {
    * Renders center line and center circle
    */
   private renderCenterElements(): void {
+    // Skip center elements in half court mode
+    // In half court mode, the bottom border represents the center/medium line
+    if (this.config.halfCourt) {
+      return;
+    }
+
     const width = this.config.widthM * this.config.pixelsPerMeter;
     const height = this.config.heightM * this.config.pixelsPerMeter;
 

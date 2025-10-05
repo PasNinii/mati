@@ -13,6 +13,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSliderModule } from '@angular/material/slider';
 import { MatCardModule } from '@angular/material/card';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 
 import Konva from 'konva';
 import {
@@ -32,6 +34,8 @@ import { HandballCourtRenderer } from './services/handball-court-renderer.servic
     MatInputModule,
     MatSliderModule,
     MatCardModule,
+    MatExpansionModule,
+    MatCheckboxModule,
   ],
   template: `
     <div class="tactical-board-container">
@@ -40,31 +44,49 @@ import { HandballCourtRenderer } from './services/handball-court-renderer.servic
           <mat-card-title>Board Configuration</mat-card-title>
         </mat-card-header>
         <mat-card-content class="controls-content">
-          @for (input of [pixelsPerMeter, height, width]; track input) {
-            @switch (input) {
-              @case (pixelsPerMeter) {
-                <label for="pixelsPerMeter"
-                  >Pixels per meter: {{ pixelsPerMeter() }}</label
-                >
-              }
-              @case (height) {
-                <label for="height">Height (meters): {{ height() }}</label>
-              }
-              @case (width) {
-                <label for="width">Width (meters): {{ width() }}</label>
-              }
-            }
+          <mat-accordion class="full-width">
+            <mat-expansion-panel [expanded]="true">
+              <mat-expansion-panel-header>
+                <mat-panel-title>Court Settings</mat-panel-title>
+              </mat-expansion-panel-header>
 
-            <mat-slider
-              min="20"
-              max="40"
-              step="1"
-              class="full-width"
-              [displayWith]="formatSliderLabel"
-            >
-              <input matSliderThumb [(ngModel)]="input" />
-            </mat-slider>
-          }
+              <div class="settings-content">
+                <mat-checkbox [(ngModel)]="fullCourt" class="full-width">
+                  Draw Full Court (unchecked = half court - upper part only)
+                </mat-checkbox>
+
+                @for (input of [pixelsPerMeter, height, width]; track input) {
+                  <div class="slider-group">
+                    @switch (input) {
+                      @case (pixelsPerMeter) {
+                        <label for="pixelsPerMeter"
+                          >Pixels per meter: {{ pixelsPerMeter() }}</label
+                        >
+                      }
+                      @case (height) {
+                        <label for="height"
+                          >Height (meters): {{ height() }}</label
+                        >
+                      }
+                      @case (width) {
+                        <label for="width">Width (meters): {{ width() }}</label>
+                      }
+                    }
+
+                    <mat-slider
+                      min="20"
+                      max="40"
+                      step="1"
+                      class="full-width"
+                      [displayWith]="formatSliderLabel"
+                    >
+                      <input matSliderThumb [(ngModel)]="input" />
+                    </mat-slider>
+                  </div>
+                }
+              </div>
+            </mat-expansion-panel>
+          </mat-accordion>
         </mat-card-content>
       </mat-card>
 
@@ -81,11 +103,24 @@ import { HandballCourtRenderer } from './services/handball-court-renderer.servic
       }
 
       .controls-content {
+        padding: 0;
+      }
+
+      .settings-content {
         display: flex;
-        flex-wrap: wrap;
+        flex-direction: column;
         gap: 16px;
-        padding: 8px;
-        align-items: center;
+        padding: 16px 0;
+      }
+
+      .slider-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .full-width {
+        width: 100%;
       }
 
       .konva-container {
@@ -108,15 +143,21 @@ export class TacticalBoardComponent implements OnDestroy {
   protected readonly pixelsPerMeter = signal(20);
   protected readonly height = signal(30);
   protected readonly width = signal(20);
+  protected readonly fullCourt = signal(false); // false = half court (upper part)
   protected formatSliderLabel(value: number): string {
     return `${value}`;
   }
 
   private readonly stage = linkedSignal<Konva.Stage>(() => {
+    // When drawing half court, use half the height (upper part)
+    const effectiveHeight = this.fullCourt()
+      ? this.height()
+      : this.height() / 2;
+
     return new Konva.Stage({
       container: this.konvaContainer().nativeElement,
       width: this.width() * this.pixelsPerMeter(),
-      height: this.height() * this.pixelsPerMeter(),
+      height: effectiveHeight * this.pixelsPerMeter(),
     });
   });
 
@@ -129,6 +170,7 @@ export class TacticalBoardComponent implements OnDestroy {
         this.pixelsPerMeter(),
         this.height(),
         this.width(),
+        this.fullCourt(),
         this.konvaContainer(),
       ];
 
@@ -164,11 +206,17 @@ export class TacticalBoardComponent implements OnDestroy {
    * Builds court configuration from current signal values
    */
   private buildCourtConfig(): CourtConfig {
+    // When drawing half court, use half the height (upper part)
+    const effectiveHeight = this.fullCourt()
+      ? this.height()
+      : this.height() / 2;
+
     return {
       widthM: this.width(),
-      heightM: this.height(),
+      heightM: effectiveHeight,
       pixelsPerMeter: this.pixelsPerMeter(),
       goalWidthM: DEFAULT_COURT_CONFIG.goalWidthM,
+      halfCourt: !this.fullCourt(), // Pass half court flag to renderer
     };
   }
 }

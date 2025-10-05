@@ -13,6 +13,9 @@ export interface CourtConfig {
 
   /** Width of the goal in meters */
   goalWidthM: number;
+
+  /** Whether to render only half court (upper part only) */
+  halfCourt?: boolean;
 }
 
 /**
