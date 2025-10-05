@@ -3,7 +3,9 @@ import { FilterType } from '../filter-type.enum';
 import {
   BaseFilter,
   BooleanFilter,
-  SingleValueFilter,
+  TextFilter,
+  SelectFilter,
+  NumberFilter,
   NumericFilter,
   ArrayFilter,
 } from './index';
@@ -16,16 +18,20 @@ export function createFilter(config: FilterConfig): BaseFilter {
     case FilterType.BOOLEAN:
       return new BooleanFilter(config);
 
-    case FilterType.NUMBER:
     case FilterType.SLIDER:
       return new NumericFilter(config);
+
+    case FilterType.NUMBER:
+      return new NumberFilter(config);
 
     case FilterType.MULTI_SELECT:
       return new ArrayFilter(config);
 
-    case FilterType.TEXT:
     case FilterType.SELECT:
+      return new SelectFilter(config);
+
+    case FilterType.TEXT:
     default:
-      return new SingleValueFilter(config);
+      return new TextFilter(config);
   }
 }

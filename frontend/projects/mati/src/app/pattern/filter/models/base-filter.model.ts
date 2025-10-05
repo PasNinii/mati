@@ -1,4 +1,4 @@
-import { signal, computed, Signal, WritableSignal } from '@angular/core';
+import { signal, Signal, WritableSignal, Type } from '@angular/core';
 import { FilterConfig } from '../filter-config.interface';
 import { FilterType } from '../filter-type.enum';
 
@@ -6,6 +6,7 @@ import { FilterType } from '../filter-type.enum';
  * Abstract base class for all filter types
  * Provides common functionality for serialization, deserialization, and keyboard shortcuts
  * Config and value are stored as signals for reactivity
+ * Each filter specifies its UI component
  */
 export abstract class BaseFilter<T = unknown> {
   // Config as a readonly signal - centralized source of truth
@@ -13,6 +14,9 @@ export abstract class BaseFilter<T = unknown> {
 
   // Value as a writable signal - centralized reactive state
   public readonly value: WritableSignal<T>;
+
+  // Component to render this filter - defined by subclasses
+  public abstract readonly component: Type<any>;
 
   private shortcutCleanup?: () => void;
 

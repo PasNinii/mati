@@ -1,10 +1,14 @@
+import { Type } from '@angular/core';
 import { BaseFilter } from './base-filter.model';
 import { FilterConfig } from '../filter-config.interface';
+import { BooleanFilterComponent } from '../../../ui/filters/boolean-filter/boolean-filter.component';
 
 /**
  * Boolean filter for true/false toggles (checkboxes, slide toggles)
  */
 export class BooleanFilter extends BaseFilter<boolean> {
+  public readonly component: Type<any> = BooleanFilterComponent;
+
   protected getTypeDefaultValue(): boolean {
     return false;
   }

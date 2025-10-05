@@ -7,33 +7,22 @@ import {
   effect,
   ChangeDetectionStrategy,
 } from '@angular/core';
+import { NgComponentOutlet } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatChipsModule } from '@angular/material/chips';
 import { FilterService } from '../../core/services/filter.service';
 import { FilterState } from '../../pattern/filter/filter-config.interface';
-import { FilterType } from '../../pattern/filter/filter-type.enum';
-import { TextFilterComponent } from '../../ui/filters/text-filter/text-filter.component';
-import { SelectFilterComponent } from '../../ui/filters/select-filter/select-filter.component';
-import { MultiSelectFilterComponent } from '../../ui/filters/multi-select-filter/multi-select-filter.component';
-import { NumberFilterComponent } from '../../ui/filters/number-filter/number-filter.component';
-import { BooleanFilterComponent } from '../../ui/filters/boolean-filter/boolean-filter.component';
-import { SliderFilterComponent } from '../../ui/filters/slider-filter/slider-filter.component';
 
 @Component({
   selector: 'app-filter',
   imports: [
+    NgComponentOutlet,
     MatButtonModule,
     MatIconModule,
     MatDividerModule,
     MatChipsModule,
-    TextFilterComponent,
-    SelectFilterComponent,
-    MultiSelectFilterComponent,
-    NumberFilterComponent,
-    BooleanFilterComponent,
-    SliderFilterComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -84,38 +73,12 @@ import { SliderFilterComponent } from '../../ui/filters/slider-filter/slider-fil
             <div class="filter-items">
               @for (filterItem of group.filterIds; track filterItem.id) {
                 <div class="filter-item">
-                  @switch (filterItem.type) {
-                    @case (FilterType.TEXT) {
-                      <app-text-filter
-                        [filter]="$any(getFilter(filterItem.id))"
-                      />
-                    }
-                    @case (FilterType.SELECT) {
-                      <app-select-filter
-                        [filter]="$any(getFilter(filterItem.id))"
-                      />
-                    }
-                    @case (FilterType.MULTI_SELECT) {
-                      <app-multi-select-filter
-                        [filter]="$any(getFilter(filterItem.id))"
-                      />
-                    }
-                    @case (FilterType.NUMBER) {
-                      <app-number-filter
-                        [filter]="$any(getFilter(filterItem.id))"
-                      />
-                    }
-                    @case (FilterType.BOOLEAN) {
-                      <app-boolean-filter
-                        [filter]="$any(getFilter(filterItem.id))"
-                      />
-                    }
-                    @case (FilterType.SLIDER) {
-                      <app-slider-filter
-                        [filter]="$any(getFilter(filterItem.id))"
-                      />
-                    }
-                  }
+                  <ng-container
+                    *ngComponentOutlet="
+                      getFilter(filterItem.id)!.component;
+                      inputs: { filter: getFilter(filterItem.id) }
+                    "
+                  />
                 </div>
               }
             </div>
@@ -138,7 +101,6 @@ export class FilterComponent implements OnInit {
   // Outputs using signal-based API
   filtersChanged = output<FilterState>();
 
-  FilterType = FilterType;
   filterGroups = this.filterService.filterGroups;
   activeFiltersCount = this.filterService.activeFiltersCount;
 
