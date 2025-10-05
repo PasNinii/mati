@@ -64,13 +64,13 @@ export class HandballZone {
     const points: Point2D[] = [];
 
     // Part 1: Left quarter circle
-    points.push(...this.generateLeftArc(leftPostX, R, yExtent));
+    points.push(...this.generateLeftArc(leftPostX, R));
 
     // Part 2: Straight line connecting the arcs
     points.push(...this.generateStraightLine(leftPostX, rightPostX, yExtent));
 
     // Part 3: Right quarter circle
-    points.push(...this.generateRightArc(rightPostX, R, yExtent));
+    points.push(...this.generateRightArc(rightPostX, R));
 
     return points;
   }
@@ -78,11 +78,7 @@ export class HandballZone {
   /**
    * Generates points for the left quarter circle around the left post
    */
-  private generateLeftArc(
-    leftPostX: number,
-    R: number,
-    yExtent: number,
-  ): Point2D[] {
+  private generateLeftArc(leftPostX: number, R: number): Point2D[] {
     const points: Point2D[] = [];
     const segmentsPerArc = this.numSegments / 4;
 
@@ -128,11 +124,7 @@ export class HandballZone {
   /**
    * Generates points for the right quarter circle around the right post
    */
-  private generateRightArc(
-    rightPostX: number,
-    R: number,
-    yExtent: number,
-  ): Point2D[] {
+  private generateRightArc(rightPostX: number, R: number): Point2D[] {
     const points: Point2D[] = [];
     const segmentsPerArc = this.numSegments / 4;
 

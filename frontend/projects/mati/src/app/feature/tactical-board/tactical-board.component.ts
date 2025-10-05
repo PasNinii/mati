@@ -17,7 +17,6 @@ import { MatCardModule } from '@angular/material/card';
 import Konva from 'konva';
 import {
   CourtConfig,
-  CourtStyles,
   DEFAULT_COURT_CONFIG,
   DEFAULT_COURT_STYLES,
 } from './models/court-config.interface';
