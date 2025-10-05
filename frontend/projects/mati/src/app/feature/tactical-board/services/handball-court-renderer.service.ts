@@ -9,6 +9,7 @@ import {
   DEFAULT_ATTACK_POSITIONS,
   DEFAULT_DEFENSE_POSITIONS,
 } from '../models/player.model';
+import { Ball } from '../models/ball.model';
 
 /**
  * Player styling configuration
@@ -38,6 +39,23 @@ export const DEFAULT_PLAYER_STYLES: PlayerStyles = {
 };
 
 /**
+ * Ball styling configuration
+ */
+export interface BallStyles {
+  ballColor: string;
+  ballRadius: number;
+  strokeWidth: number;
+  strokeColor: string;
+}
+
+export const DEFAULT_BALL_STYLES: BallStyles = {
+  ballColor: '#000000', // Black for the ball
+  ballRadius: 12,
+  strokeWidth: 2,
+  strokeColor: '#FFFFFF',
+};
+
+/**
  * Renders a complete handball court with all its elements:
  * - Court background and borders
  * - Goal areas (6m and 9m zones)
@@ -50,8 +68,11 @@ export class HandballCourtRenderer {
   private config: CourtConfig;
   private styles: CourtStyles;
   private playerStyles: PlayerStyles;
+  private ballStyles: BallStyles;
   private players: Player[] = [];
   private playerShapes: Map<string, Konva.Group> = new Map();
+  private ball: Ball | null = null;
+  private ballShape: Konva.Group | null = null;
   private showCoordinates: boolean = false;
 
   constructor(
@@ -59,11 +80,13 @@ export class HandballCourtRenderer {
     config: CourtConfig,
     styles: CourtStyles,
     playerStyles: PlayerStyles = DEFAULT_PLAYER_STYLES,
+    ballStyles: BallStyles = DEFAULT_BALL_STYLES,
   ) {
     this.layer = layer;
     this.config = config;
     this.styles = styles;
     this.playerStyles = playerStyles;
+    this.ballStyles = ballStyles;
   }
 
   /**
@@ -74,6 +97,7 @@ export class HandballCourtRenderer {
     this.renderGoalAreas();
     this.renderCenterElements();
     this.renderPlayers();
+    this.renderBall();
     this.layer.draw();
   }
 
@@ -114,6 +138,12 @@ export class HandballCourtRenderer {
       );
       this.players.push(player);
     });
+
+    // Initialize ball at CB (Center Back) attack position by default
+    const cbPosition = DEFAULT_ATTACK_POSITIONS[AttackPosition.CB];
+    const ballX = cbPosition.xMeters * pixelsPerMeter;
+    const ballY = cbPosition.yMeters * pixelsPerMeter;
+    this.addBall(ballX, ballY);
   }
 
   /**
@@ -413,6 +443,123 @@ export class HandballCourtRenderer {
 
     this.layer.destroyChildren();
     this.playerShapes.clear();
+    this.ballShape = null;
     this.render();
+  }
+
+  /**
+   * Renders the ball if it exists
+   */
+  private renderBall(): void {
+    if (this.ball) {
+      this.createBallShape(this.ball);
+    }
+  }
+
+  /**
+   * Creates and renders the ball shape
+   */
+  private createBallShape(ball: Ball): void {
+    const group = new Konva.Group({
+      x: ball.coordinates.x,
+      y: ball.coordinates.y,
+      draggable: ball.draggable,
+    });
+
+    // Create circle for ball
+    const circle = new Konva.Circle({
+      radius: this.ballStyles.ballRadius,
+      fill: this.ballStyles.ballColor,
+      stroke: this.ballStyles.strokeColor,
+      strokeWidth: this.ballStyles.strokeWidth,
+    });
+
+    group.add(circle);
+
+    // Add coordinates text if enabled
+    if (this.showCoordinates) {
+      const xMeters = (ball.coordinates.x / this.config.pixelsPerMeter).toFixed(
+        1,
+      );
+      const yMeters = (ball.coordinates.y / this.config.pixelsPerMeter).toFixed(
+        1,
+      );
+      const coordsText = new Konva.Text({
+        name: 'coords-text',
+        text: `(${xMeters}m, ${yMeters}m)`,
+        fontSize: 10,
+        fill: '#000000',
+        align: 'center',
+        y: this.ballStyles.ballRadius + 5,
+      });
+      coordsText.offsetX(coordsText.width() / 2);
+      group.add(coordsText);
+    }
+
+    // Handle drag events to update ball coordinates
+    group.on('dragmove', () => {
+      ball.updateCoordinates(group.x(), group.y());
+      // Update coordinates display if enabled
+      if (this.showCoordinates) {
+        const coordsText = group.findOne('.coords-text') as Konva.Text;
+        if (coordsText) {
+          const xMeters = (
+            ball.coordinates.x / this.config.pixelsPerMeter
+          ).toFixed(1);
+          const yMeters = (
+            ball.coordinates.y / this.config.pixelsPerMeter
+          ).toFixed(1);
+          coordsText.text(`(${xMeters}m, ${yMeters}m)`);
+          coordsText.offsetX(coordsText.width() / 2);
+        }
+      }
+    });
+
+    this.ballShape = group;
+    this.layer.add(group);
+  }
+
+  /**
+   * Adds the ball to the court at a specific position
+   */
+  addBall(x?: number, y?: number): void {
+    // Default position: center of the court
+    const defaultX = (this.config.widthM * this.config.pixelsPerMeter) / 2;
+    const defaultY = (this.config.heightM * this.config.pixelsPerMeter) / 2;
+
+    this.ball = new Ball({ x: x ?? defaultX, y: y ?? defaultY }, true);
+
+    if (this.ballShape) {
+      this.ballShape.destroy();
+    }
+
+    this.createBallShape(this.ball);
+    this.layer.draw();
+  }
+
+  /**
+   * Removes the ball from the court
+   */
+  removeBall(): void {
+    this.ball = null;
+    if (this.ballShape) {
+      this.ballShape.destroy();
+      this.ballShape = null;
+      this.layer.draw();
+    }
+  }
+
+  /**
+   * Gets the current ball
+   */
+  getBall(): Ball | null {
+    return this.ball;
+  }
+
+  /**
+   * Checks if the ball is currently on the court
+   */
+  hasBall(): boolean {
+    return this.ball !== null;
   }
 }

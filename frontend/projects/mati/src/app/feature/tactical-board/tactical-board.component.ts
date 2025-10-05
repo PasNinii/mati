@@ -46,10 +46,23 @@ import {
     MatButtonModule,
     MatIconModule,
   ],
+  styleUrl: './tactical-board.component.scss',
   template: `
     <mat-drawer-container class="drawer-container" autosize>
       <mat-drawer-content>
         <div class="tactical-board-container">
+          <button
+            mat-mini-fab
+            color="accent"
+            class="theme-toggle-btn"
+            (click)="toggleTheme()"
+            aria-label="Toggle theme"
+          >
+            <mat-icon>{{
+              isDarkTheme() ? 'light_mode' : 'dark_mode'
+            }}</mat-icon>
+          </button>
+
           <button
             mat-fab
             color="primary"
@@ -64,13 +77,13 @@ import {
         </div>
       </mat-drawer-content>
 
-      <mat-drawer #drawer mode="side" position="end" class="settings-drawer">
+      <mat-drawer #drawer mode="over" position="end" class="settings-drawer">
         <mat-card class="controls-card">
           <mat-card-header>
             <mat-card-title>Board Configuration</mat-card-title>
           </mat-card-header>
           <mat-card-content class="controls-content">
-            <mat-accordion class="full-width">
+            <mat-accordion class="full-width" [multi]="true">
               <mat-expansion-panel [expanded]="true">
                 <mat-expansion-panel-header>
                   <mat-panel-title>Court Settings</mat-panel-title>
@@ -78,7 +91,7 @@ import {
 
                 <div class="settings-content">
                   <mat-checkbox [(ngModel)]="fullCourt" class="full-width">
-                    Draw Full Court (unchecked = half court - upper part only)
+                    Draw Full Court
                   </mat-checkbox>
 
                   @for (input of [pixelsPerMeter, height]; track input) {
@@ -167,103 +180,52 @@ import {
                   </div>
                 </div>
               </mat-expansion-panel>
+
+              <mat-expansion-panel>
+                <mat-expansion-panel-header>
+                  <mat-panel-title>Ball Management</mat-panel-title>
+                </mat-expansion-panel-header>
+
+                <div class="settings-content">
+                  <div class="button-group">
+                    <button
+                      mat-raised-button
+                      color="primary"
+                      (click)="addBall()"
+                      [disabled]="hasBall()"
+                      class="full-width"
+                    >
+                      Add Ball (Center)
+                    </button>
+                    <button
+                      mat-raised-button
+                      color="warn"
+                      (click)="removeBall()"
+                      [disabled]="!hasBall()"
+                      class="full-width"
+                    >
+                      Remove Ball
+                    </button>
+                  </div>
+
+                  <div class="info-section">
+                    <h4>Ball Status</h4>
+                    <p class="position-info">
+                      {{
+                        hasBall()
+                          ? 'Ball is on the court (drag to move)'
+                          : 'No ball on the court'
+                      }}
+                    </p>
+                  </div>
+                </div>
+              </mat-expansion-panel>
             </mat-accordion>
           </mat-card-content>
         </mat-card>
       </mat-drawer>
     </mat-drawer-container>
   `,
-  styles: [
-    `
-      .drawer-container {
-        width: 100%;
-        height: 100vh;
-      }
-
-      .tactical-board-container {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-        padding: 16px;
-        height: 100%;
-        position: relative;
-      }
-
-      .toggle-drawer-btn {
-        position: absolute;
-        top: 16px;
-        right: 16px;
-        z-index: 1000;
-      }
-
-      .settings-drawer {
-        width: 350px;
-        padding: 16px;
-      }
-
-      .controls-card {
-        height: 100%;
-      }
-
-      .controls-content {
-        padding: 0;
-      }
-
-      .settings-content {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-        padding: 16px 0;
-      }
-
-      .slider-group {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-      }
-
-      .full-width {
-        width: 100%;
-      }
-
-      .konva-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        flex: 1;
-        border: 1px solid #e0e0e0;
-        border-radius: 4px;
-        padding: 16px;
-        background-color: #ffffff;
-      }
-
-      .button-group {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-      }
-
-      .info-section {
-        margin-top: 16px;
-        padding-top: 16px;
-        border-top: 1px solid #e0e0e0;
-      }
-
-      .info-section h4 {
-        margin: 12px 0 8px 0;
-        font-size: 14px;
-        font-weight: 500;
-        color: rgba(0, 0, 0, 0.87);
-      }
-
-      .position-info {
-        margin: 0;
-        font-size: 12px;
-        line-height: 1.6;
-        color: rgba(0, 0, 0, 0.6);
-      }
-    `,
-  ],
 })
 export class TacticalBoardComponent implements OnDestroy {
   protected readonly konvaContainer =
@@ -275,9 +237,27 @@ export class TacticalBoardComponent implements OnDestroy {
   protected readonly fullCourt = signal(false); // false = half court (upper part)
   protected readonly playerCount = signal(0);
   protected readonly showCoordinates = signal(true);
+  protected readonly isDarkTheme = signal(false);
 
   protected formatSliderLabel(value: number): string {
     return `${value}`;
+  }
+
+  /**
+   * Toggle between light and dark theme
+   */
+  protected toggleTheme(): void {
+    const newTheme = !this.isDarkTheme();
+    this.isDarkTheme.set(newTheme);
+
+    // Toggle the dark-theme class on the html element
+    if (newTheme) {
+      document.documentElement.classList.add('dark-theme');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark-theme');
+      localStorage.setItem('theme', 'light');
+    }
   }
 
   private readonly stage = linkedSignal<Konva.Stage>(() => {
@@ -297,6 +277,16 @@ export class TacticalBoardComponent implements OnDestroy {
   private courtRenderer?: HandballCourtRenderer;
 
   constructor() {
+    // Load saved theme preference
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+      this.isDarkTheme.set(true);
+      document.documentElement.classList.add('dark-theme');
+    } else if (savedTheme === 'light') {
+      this.isDarkTheme.set(false);
+      document.documentElement.classList.remove('dark-theme');
+    }
+
     afterRenderEffect(() => {
       [
         this.pixelsPerMeter(),
@@ -368,6 +358,30 @@ export class TacticalBoardComponent implements OnDestroy {
 
     this.courtRenderer.clearPlayers();
     this.updatePlayerCount();
+  }
+
+  /**
+   * Adds the ball to the court at the center position
+   */
+  protected addBall(): void {
+    if (!this.courtRenderer) return;
+    this.courtRenderer.addBall();
+  }
+
+  /**
+   * Removes the ball from the court
+   */
+  protected removeBall(): void {
+    if (!this.courtRenderer) return;
+    this.courtRenderer.removeBall();
+  }
+
+  /**
+   * Checks if the ball is currently on the court
+   */
+  protected hasBall(): boolean {
+    if (!this.courtRenderer) return false;
+    return this.courtRenderer.hasBall();
   }
 
   /**

@@ -1,18 +1,132 @@
-
 // Custom Theming for Angular Material
 // For more information: https://material.angular.io/guide/theming
 @use '@angular/material' as mat;
 
-html {
-  @include mat.theme((
-    color: (
-      theme-type: light,
-      primary: mat.$azure-palette,
-      tertiary: mat.$blue-palette,
-    ),
-    typography: Roboto,
-    density: 0,
-  ));
+// Theme token generator mixin
+// Usage: @include theme-tokens('token-name', light-value, dark-value);
+@mixin theme-tokens($name, $light, $dark) {
+  :root {
+    --#{$name}: #{$light};
+  }
+  .dark-theme {
+    --#{$name}: #{$dark};
+  }
 }
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+// Generate all theme tokens
+@include theme-tokens('bg-gradient-start', #667eea, #1a1a2e);
+@include theme-tokens('bg-gradient-end', #764ba2, #16213e);
+@include theme-tokens(
+  'bg-radial-overlay',
+  rgba(255, 255, 255, 0.1),
+  rgba(255, 255, 255, 0.05)
+);
+
+@include theme-tokens('canvas-bg', #ffffff, #2a2a3e);
+@include theme-tokens('canvas-shadow', rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.4));
+@include theme-tokens(
+  'canvas-shadow-hover',
+  rgba(0, 0, 0, 0.2),
+  rgba(0, 0, 0, 0.5)
+);
+@include theme-tokens(
+  'canvas-inset-shadow',
+  rgba(0, 0, 0, 0.05),
+  rgba(255, 255, 255, 0.02)
+);
+
+@include theme-tokens('drawer-bg', #fafafa, #1a1a2e);
+@include theme-tokens(
+  'drawer-border',
+  rgba(0, 0, 0, 0.08),
+  rgba(255, 255, 255, 0.08)
+);
+
+@include theme-tokens('panel-bg', #ffffff, #2a2a3e);
+@include theme-tokens('panel-shadow', rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.3));
+@include theme-tokens(
+  'panel-shadow-hover',
+  rgba(0, 0, 0, 0.12),
+  rgba(0, 0, 0, 0.4)
+);
+@include theme-tokens(
+  'panel-shadow-expanded',
+  rgba(0, 0, 0, 0.15),
+  rgba(0, 0, 0, 0.5)
+);
+@include theme-tokens(
+  'panel-hover-bg',
+  rgba(102, 126, 234, 0.04),
+  rgba(102, 126, 234, 0.1)
+);
+
+@include theme-tokens('text-primary', #333333, #e0e0e0);
+@include theme-tokens('text-secondary', #555555, #b0b0b0);
+@include theme-tokens('text-tertiary', #666666, #999999);
+@include theme-tokens('text-info', #b0b0b0, #808080);
+
+@include theme-tokens('accent-color', #667eea, #8b9ef6);
+@include theme-tokens('accent-color-rgb', 102 126 234, 139 158 246);
+
+@include theme-tokens('info-bg-start', #f5f7fa, #2a2a3e);
+@include theme-tokens('info-bg-end', #e8edf3, #1f1f2e);
+@include theme-tokens(
+  'info-border',
+  rgba(102, 126, 234, 0.1),
+  rgba(102, 126, 234, 0.2)
+);
+@include theme-tokens('info-content-bg', #ffffff, #1a1a2e);
+
+@include theme-tokens(
+  'scrollbar-thumb',
+  rgba(0, 0, 0, 0.2),
+  rgba(255, 255, 255, 0.2)
+);
+@include theme-tokens(
+  'scrollbar-thumb-hover',
+  rgba(0, 0, 0, 0.3),
+  rgba(255, 255, 255, 0.3)
+); // Apply light theme by default
+html {
+  @include mat.theme(
+    (
+      color: (
+        theme-type: light,
+        primary: mat.$azure-palette,
+        tertiary: mat.$blue-palette,
+      ),
+      typography: Roboto,
+      density: 0,
+    )
+  );
+}
+
+// Apply dark theme when .dark-theme class is present
+html.dark-theme {
+  @include mat.theme(
+    (
+      color: (
+        theme-type: dark,
+        primary: mat.$azure-palette,
+        tertiary: mat.$blue-palette,
+      ),
+      typography: Roboto,
+      density: 0,
+    )
+  );
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; // Prevent body scroll - content should fit viewport
+}
+
+body {
+  font-family: Roboto, 'Helvetica Neue', sans-serif;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
+}

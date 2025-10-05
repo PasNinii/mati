@@ -1,0 +1,418 @@
+// Main container
+.drawer-container {
+  width: 100%;
+  height: 100vh;
+  max-height: 100vh;
+  background: linear-gradient(
+    135deg,
+    var(--bg-gradient-start) 0%,
+    var(--bg-gradient-end) 100%
+  );
+  position: relative;
+  overflow: hidden;
+  transition: background 0.3s ease;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background:
+      radial-gradient(
+        circle at 20% 50%,
+        var(--bg-radial-overlay) 0%,
+        transparent 50%
+      ),
+      radial-gradient(
+        circle at 80% 80%,
+        var(--bg-radial-overlay) 0%,
+        transparent 50%
+      );
+    pointer-events: none;
+    transition: background 0.3s ease;
+  }
+
+  // Ensure drawer content doesn't scroll
+  ::ng-deep mat-drawer-content {
+    overflow: hidden !important;
+  }
+}
+
+// Board container
+.tactical-board-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px;
+  height: 100%;
+  max-height: 100vh;
+  position: relative;
+  z-index: 1;
+  overflow: hidden; // Prevent scroll - konva container should handle sizing
+  box-sizing: border-box;
+}
+
+// Toggle button
+.toggle-drawer-btn {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  z-index: 1000;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  mat-icon {
+    transition: transform 0.3s ease;
+  }
+
+  &:hover mat-icon {
+    transform: rotate(90deg);
+  }
+}
+
+// Konva container
+.konva-container {
+  background: var(--canvas-bg);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px var(--canvas-shadow);
+  overflow: hidden;
+  flex: 1;
+  min-height: 0; // Important: allows flex child to shrink below content size
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition:
+    box-shadow 0.3s ease,
+    background 0.3s ease;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 16px;
+    box-shadow: inset 0 2px 8px var(--canvas-inset-shadow);
+    pointer-events: none;
+    transition: box-shadow 0.3s ease;
+  }
+
+  &:hover {
+    box-shadow: 0 12px 48px var(--canvas-shadow-hover);
+  }
+}
+
+// Settings drawer
+.settings-drawer {
+  width: 400px;
+  border-left: 1px solid var(--drawer-border);
+  background: var(--drawer-bg);
+  transition:
+    background 0.3s ease,
+    border-color 0.3s ease;
+
+  @media (max-width: 768px) {
+    width: 90vw;
+    max-width: 400px;
+  }
+}
+
+// Controls card
+.controls-card {
+  height: 100%;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+
+  mat-card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 24px;
+    margin: 0 -16px 24px -16px;
+    border-radius: 0;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  }
+
+  mat-card-title {
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+    margin: 0;
+  }
+}
+
+// Controls content
+.controls-content {
+  padding: 0 8px 24px 8px;
+  overflow-y: auto;
+  max-height: calc(100vh - 120px);
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 4px;
+    transition: background 0.3s ease;
+
+    &:hover {
+      background: var(--scrollbar-thumb-hover);
+    }
+  }
+}
+
+// Accordion styling
+.mat-accordion {
+  display: block;
+
+  mat-expansion-panel {
+    background: var(--panel-bg);
+    border-radius: 12px !important;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px var(--panel-shadow);
+    transition: all 0.3s ease;
+    overflow: hidden;
+
+    &:hover {
+      box-shadow: 0 4px 16px var(--panel-shadow-hover);
+    }
+
+    &.mat-expanded {
+      box-shadow: 0 4px 20px var(--panel-shadow-expanded);
+    }
+  }
+
+  .mat-expansion-panel-header {
+    padding: 16px 20px;
+    transition: background-color 0.3s ease;
+
+    &:hover {
+      background: var(--panel-hover-bg);
+    }
+  }
+
+  .mat-panel-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    transition: color 0.3s ease;
+  }
+}
+
+// Settings content
+.settings-content {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+// Slider group
+.slider-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: color 0.3s ease;
+  }
+
+  mat-slider {
+    width: 100%;
+  }
+}
+
+// Button group
+.button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  button {
+    height: 44px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    border-radius: 8px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    &:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+// Info section
+.info-section {
+  background: linear-gradient(
+    135deg,
+    var(--info-bg-start) 0%,
+    var(--info-bg-end) 100%
+  );
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid var(--info-border);
+  transition:
+    background 0.3s ease,
+    border-color 0.3s ease;
+
+  h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent-color);
+    margin: 0 0 8px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: color 0.3s ease;
+
+    &:not(:first-child) {
+      margin-top: 16px;
+    }
+  }
+
+  .position-info {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    margin: 0;
+    font-family: 'Courier New', monospace;
+    background: var(--info-content-bg);
+    padding: 12px;
+    border-radius: 8px;
+    border-left: 3px solid var(--accent-color);
+    box-shadow: 0 2px 4px var(--panel-shadow);
+    transition:
+      background 0.3s ease,
+      color 0.3s ease,
+      border-color 0.3s ease;
+  }
+}
+
+// Utility classes
+.full-width {
+  width: 100%;
+}
+
+// Checkbox styling
+mat-checkbox {
+  &.full-width {
+    margin: 4px 0;
+
+    ::ng-deep .mat-mdc-checkbox-label {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      transition: color 0.3s ease;
+    }
+  }
+}
+
+// Animations
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+mat-expansion-panel {
+  animation: fadeIn 0.3s ease-out;
+}
+
+// Responsive design
+@media (max-width: 1024px) {
+  .tactical-board-container {
+    padding: 16px;
+  }
+
+  .toggle-drawer-btn {
+    top: 16px;
+    right: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .tactical-board-container {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .toggle-drawer-btn {
+    top: 12px;
+    right: 12px;
+    width: 48px;
+    height: 48px;
+  }
+
+  .controls-card mat-card-header {
+    padding: 20px 16px;
+  }
+
+  .controls-card mat-card-title {
+    font-size: 20px;
+  }
+
+  .settings-content {
+    padding: 16px;
+  }
+}
+
+// Theme toggle button (optional - can be added to the template)
+.theme-toggle-btn {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  z-index: 1000;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+    transform: translateY(-2px);
+  }
+
+  mat-icon {
+    transition: transform 0.3s ease;
+  }
+
+  &:hover mat-icon {
+    transform: rotate(180deg);
+  }
+}
