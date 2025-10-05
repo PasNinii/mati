@@ -41,4 +41,36 @@ export class NumericFilter extends BaseFilter<number> {
     const min = this._config.min ?? -Infinity;
     this._value = Math.max(this._value - step, min);
   }
+
+  /**
+   * Initialize shortcuts for numeric filter
+   */
+  override initShortcuts(
+    shortcutService: {
+      register: (shortcut: string, handler: () => void) => () => void;
+    },
+    onUpdate: () => void,
+  ): void {
+    if (this._config.shortcuts?.increment) {
+      this.registerShortcut(
+        shortcutService,
+        this._config.shortcuts.increment,
+        () => {
+          this.increment();
+          onUpdate();
+        },
+      );
+    }
+
+    if (this._config.shortcuts?.decrement) {
+      this.registerShortcut(
+        shortcutService,
+        this._config.shortcuts.decrement,
+        () => {
+          this.decrement();
+          onUpdate();
+        },
+      );
+    }
+  }
 }

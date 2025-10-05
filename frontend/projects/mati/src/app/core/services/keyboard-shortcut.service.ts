@@ -1,20 +1,14 @@
-import { Injectable, inject } from '@angular/core';
-import { fromEvent, Subject } from 'rxjs';
-import { filter, takeUntil } from 'rxjs/operators';
+import { Injectable } from '@angular/core';
 
-export interface ShortcutAction {
-  filterId?: string;
-  action: 'toggle' | 'increment' | 'decrement';
-  customHandler?: () => void;
-}
-
+/**
+ * Simplified keyboard shortcut service
+ * Acts as a thin coordinator for keyboard shortcuts
+ */
 @Injectable({
   providedIn: 'root',
 })
 export class KeyboardShortcutService {
-  private shortcuts = new Map<string, ShortcutAction>();
-  private destroy$ = new Subject<void>();
-  private isListening = false;
+  private shortcuts = new Map<string, () => void>();
   private boundHandleKeyDown: ((event: KeyboardEvent) => void) | null = null;
 
   constructor() {
@@ -22,107 +16,43 @@ export class KeyboardShortcutService {
   }
 
   /**
-   * Register a keyboard shortcut
-   * @param shortcut - Keyboard shortcut string (e.g., 'ctrl+b', 'ctrl+shift+s')
-   * @param action - Action configuration
+   * Register a keyboard shortcut with a handler
+   * Returns an unregister function for cleanup
    */
-  register(shortcut: string, action: ShortcutAction): void {
-    const normalizedShortcut = this.normalizeShortcut(shortcut);
-    this.shortcuts.set(normalizedShortcut, action);
-  }
+  register(shortcut: string, handler: () => void): () => void {
+    const normalized = this.normalizeShortcut(shortcut);
+    this.shortcuts.set(normalized, handler);
 
-  /**
-   * Unregister a keyboard shortcut
-   */
-  unregister(shortcut: string): void {
-    const normalizedShortcut = this.normalizeShortcut(shortcut);
-    this.shortcuts.delete(normalizedShortcut);
-  }
-
-  /**
-   * Clear all registered shortcuts
-   */
-  clearAll(): void {
-    this.shortcuts.clear();
-  }
-
-  /**
-   * Get action for a shortcut
-   */
-  getAction(shortcut: string): ShortcutAction | undefined {
-    const normalizedShortcut = this.normalizeShortcut(shortcut);
-    return this.shortcuts.get(normalizedShortcut);
+    // Return cleanup function
+    return () => this.shortcuts.delete(normalized);
   }
 
   /**
    * Start listening for keyboard events
    */
   private startListening(): void {
-    if (this.isListening) return;
-
-    // Use capture phase to intercept events before they reach components
     this.boundHandleKeyDown = this.handleKeyDown.bind(this);
     document.addEventListener('keydown', this.boundHandleKeyDown, {
       capture: true,
     });
-
-    this.isListening = true;
   }
 
   /**
    * Handle keydown events
    */
   private handleKeyDown(event: KeyboardEvent): void {
-    // Check if we should handle this event (not in input fields, etc.)
     if (!this.shouldHandleEvent(event)) {
       return;
     }
 
     const shortcut = this.eventToShortcut(event);
-    const action = this.shortcuts.get(shortcut);
+    const handler = this.shortcuts.get(shortcut);
 
-    if (action) {
-      // Prevent default browser behavior
+    if (handler) {
       event.preventDefault();
       event.stopPropagation();
-
-      if (action.customHandler) {
-        action.customHandler();
-      } else {
-        // Emit event that can be handled by subscribers
-        this.shortcutTriggered$.next({ shortcut, action });
-      }
+      handler();
     }
-  }
-
-  /**
-   * Stop listening for keyboard events
-   */
-  stopListening(): void {
-    if (this.boundHandleKeyDown) {
-      document.removeEventListener('keydown', this.boundHandleKeyDown, {
-        capture: true,
-      });
-      this.boundHandleKeyDown = null;
-    }
-    this.destroy$.next();
-    this.destroy$.complete();
-    this.isListening = false;
-  }
-
-  /**
-   * Subject to emit shortcut triggers
-   */
-  private shortcutTriggered$ = new Subject<{
-    shortcut: string;
-    action: ShortcutAction;
-  }>();
-
-  /**
-   * Observable for shortcut triggers
-   */
-  get shortcutTriggered() {
-    return this.shortcutTriggered$.asObservable();
   }
 
   /**

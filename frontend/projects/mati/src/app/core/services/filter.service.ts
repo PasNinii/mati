@@ -15,11 +15,7 @@ import {
   FilterState,
 } from '../../pattern/filter/filter-config.interface';
 import { KeyboardShortcutService } from './keyboard-shortcut.service';
-import {
-  BaseFilter,
-  BooleanFilter,
-  NumericFilter,
-} from '../../pattern/filter/models';
+import { BaseFilter } from '../../pattern/filter/models';
 import { createFilter } from '../../pattern/filter/models/filter.factory';
 
 @Injectable({
@@ -59,52 +55,6 @@ export class FilterService {
       const state = this.filterState();
       this.updateUrlParams(state);
     });
-
-    // Subscribe to keyboard shortcuts
-    this.keyboardShortcutService.shortcutTriggered.subscribe(
-      ({ shortcut, action }) => {
-        if (action.filterId) {
-          this.handleFilterShortcut(action.filterId, action.action);
-        }
-      },
-    );
-  }
-
-  /**
-   * Handle keyboard shortcut for a filter
-   */
-  private handleFilterShortcut(
-    filterId: string,
-    action: 'toggle' | 'increment' | 'decrement',
-  ): void {
-    const filter = this.getFilter(filterId);
-    if (!filter) {
-      return;
-    }
-
-    switch (action) {
-      case 'toggle':
-        // Toggle boolean filters
-        if (filter instanceof BooleanFilter) {
-          filter.toggle();
-          this.filters.update((map) => new Map(map));
-        }
-        break;
-      case 'increment':
-        // Increment numeric filters
-        if (filter instanceof NumericFilter) {
-          filter.increment();
-          this.filters.update((map) => new Map(map));
-        }
-        break;
-      case 'decrement':
-        // Decrement numeric filters
-        if (filter instanceof NumericFilter) {
-          filter.decrement();
-          this.filters.update((map) => new Map(map));
-        }
-        break;
-    }
   }
 
   /**
@@ -134,42 +84,15 @@ export class FilterService {
         const filter = createFilter(config);
         filterMap.set(config.id, filter);
 
-        // Register keyboard shortcuts for this filter
-        this.registerFilterShortcuts(filter);
+        // Let each filter register its own shortcuts
+        filter.initShortcuts(this.keyboardShortcutService, () => {
+          // Update signal when shortcut triggers change
+          this.filters.update((map) => new Map(map));
+        });
       });
     });
 
     this.filters.set(filterMap);
-  }
-
-  /**
-   * Register keyboard shortcuts for a filter
-   */
-  private registerFilterShortcuts(filter: BaseFilter): void {
-    const config = filter.config;
-
-    // Register toggle shortcut (for boolean filters)
-    if (config.shortcut) {
-      this.keyboardShortcutService.register(config.shortcut, {
-        filterId: filter.id,
-        action: 'toggle',
-      });
-    }
-
-    // Register increment/decrement shortcuts (for numeric filters)
-    if (config.shortcuts?.increment) {
-      this.keyboardShortcutService.register(config.shortcuts.increment, {
-        filterId: filter.id,
-        action: 'increment',
-      });
-    }
-
-    if (config.shortcuts?.decrement) {
-      this.keyboardShortcutService.register(config.shortcuts.decrement, {
-        filterId: filter.id,
-        action: 'decrement',
-      });
-    }
   }
 
   /**
@@ -266,17 +189,5 @@ export class FilterService {
       // Trigger update to notify subscribers
       this.filters.update((map) => new Map(map));
     });
-  }
-
-  /**
-   * Get filters by group ID
-   */
-  getFiltersByGroup(groupId: string): BaseFilter[] {
-    const group = this.filterConfigs().find((g) => g.id === groupId);
-    if (!group) return [];
-
-    return group.filters
-      .map((config) => this.getFilter(config.id))
-      .filter((f): f is BaseFilter => f !== undefined);
   }
 }

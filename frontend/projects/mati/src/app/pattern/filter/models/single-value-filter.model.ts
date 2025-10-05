@@ -39,4 +39,11 @@ export class SingleValueFilter<
       this._value = value as T;
     }
   }
+
+  /**
+   * Single value filters don't use keyboard shortcuts
+   */
+  override initShortcuts(): void {
+    // No shortcuts for single value filters
+  }
 }

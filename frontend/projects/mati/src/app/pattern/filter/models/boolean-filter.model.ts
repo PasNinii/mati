@@ -30,4 +30,21 @@ export class BooleanFilter extends BaseFilter<boolean> {
   toggle(): void {
     this._value = !this._value;
   }
+
+  /**
+   * Initialize shortcuts for boolean filter
+   */
+  override initShortcuts(
+    shortcutService: {
+      register: (shortcut: string, handler: () => void) => () => void;
+    },
+    onUpdate: () => void,
+  ): void {
+    if (this._config.shortcut) {
+      this.registerShortcut(shortcutService, this._config.shortcut, () => {
+        this.toggle();
+        onUpdate();
+      });
+    }
+  }
 }

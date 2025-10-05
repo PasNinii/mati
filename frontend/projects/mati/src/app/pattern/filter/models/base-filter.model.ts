@@ -5,13 +5,52 @@ import { FilterType } from '../filter-type.enum';
  * Abstract base class for all filter types
  * Provides common functionality for serialization, deserialization, and keyboard shortcuts
  */
-export abstract class BaseFilter<T = any> {
+export abstract class BaseFilter<T = unknown> {
   protected _config: FilterConfig;
   protected _value: T;
+  private shortcutCleanup?: () => void;
 
   constructor(config: FilterConfig) {
     this._config = config;
     this._value = this.getDefaultValue();
+  }
+
+  /**
+   * Initialize keyboard shortcuts for this filter
+   * Subclasses must implement this to register their shortcuts
+   */
+  abstract initShortcuts(
+    shortcutService: {
+      register: (shortcut: string, handler: () => void) => () => void;
+    },
+    onUpdate: () => void,
+  ): void;
+
+  /**
+   * Helper to register a shortcut and store cleanup
+   */
+  protected registerShortcut(
+    service: {
+      register: (shortcut: string, handler: () => void) => () => void;
+    },
+    shortcut: string,
+    handler: () => void,
+  ): void {
+    const cleanup = service.register(shortcut, handler);
+
+    // Chain cleanups if multiple shortcuts
+    const previousCleanup = this.shortcutCleanup;
+    this.shortcutCleanup = () => {
+      cleanup();
+      previousCleanup?.();
+    };
+  }
+
+  /**
+   * Cleanup shortcuts when filter is destroyed
+   */
+  destroy(): void {
+    this.shortcutCleanup?.();
   }
 
   get config(): FilterConfig {
@@ -47,9 +86,9 @@ export abstract class BaseFilter<T = any> {
 
   /**
    * Get the default value based on filter type
-   * Subclasses can override this to provide type-specific defaults
+   * Subclasses must override this to provide type-specific defaults
    */
-  protected abstract getTypeDefaultValue(): any;
+  protected abstract getTypeDefaultValue(): unknown;
 
   /**
    * Check if the filter has a meaningful value
@@ -101,7 +140,7 @@ export abstract class BaseFilter<T = any> {
   /**
    * Convert filter to JSON representation
    */
-  toJSON(): any {
+  toJSON(): { id: string; value: T } {
     return {
       id: this.id,
       value: this._value,

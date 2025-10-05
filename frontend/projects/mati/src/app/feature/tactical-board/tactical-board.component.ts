@@ -4,19 +4,10 @@ import {
   ElementRef,
   linkedSignal,
   OnDestroy,
-  OnInit,
   signal,
   untracked,
   viewChild,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatSliderModule } from '@angular/material/slider';
-import { MatCardModule } from '@angular/material/card';
-import { MatExpansionModule } from '@angular/material/expansion';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -32,28 +23,12 @@ import {
   DEFAULT_PLAYER_STYLES,
 } from './services/handball-court-renderer.service';
 import { FilterComponent } from '../../pattern/filter';
-import { FilterService } from '../../core/services/filter.service';
 import { FilterState } from '../../pattern/filter/filter-config.interface';
-import { KeyboardShortcutService } from '../../core/services/keyboard-shortcut.service';
 
 @Component({
   selector: 'hostiles-tactical-board',
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    ReactiveFormsModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSliderModule,
-    MatCardModule,
-    MatExpansionModule,
-    MatCheckboxModule,
-    MatSidenavModule,
-    MatButtonModule,
-    MatIconModule,
-    FilterComponent,
-  ],
+  imports: [MatSidenavModule, MatButtonModule, MatIconModule, FilterComponent],
   styleUrl: './tactical-board.component.scss',
   template: `
     <mat-drawer-container class="drawer-container" autosize>
@@ -89,7 +64,7 @@ import { KeyboardShortcutService } from '../../core/services/keyboard-shortcut.s
     </mat-drawer-container>
   `,
 })
-export class TacticalBoardComponent implements OnInit, OnDestroy {
+export class TacticalBoardComponent implements OnDestroy {
   protected readonly konvaContainer =
     viewChild.required<ElementRef<HTMLDivElement>>('konvaContainer');
 
@@ -117,10 +92,7 @@ export class TacticalBoardComponent implements OnInit, OnDestroy {
   private readonly layer = signal<Konva.Layer>(new Konva.Layer());
   private courtRenderer?: HandballCourtRenderer;
 
-  constructor(
-    private filterService: FilterService,
-    private keyboardShortcutService: KeyboardShortcutService,
-  ) {
+  constructor() {
     afterRenderEffect(() => {
       [
         this.pixelsPerMeter(),
@@ -160,10 +132,6 @@ export class TacticalBoardComponent implements OnInit, OnDestroy {
     });
   }
 
-  ngOnInit(): void {
-    // Filters are loaded automatically by the filter component
-  }
-
   ngOnDestroy(): void {
     this.stage()?.destroy();
   }
@@ -198,10 +166,6 @@ export class TacticalBoardComponent implements OnInit, OnDestroy {
     }
   }
 
-  protected formatSliderLabel(value: number): string {
-    return `${value}`;
-  }
-
   /**
    * Initializes Konva stage and renders the handball court
    */
@@ -225,27 +189,6 @@ export class TacticalBoardComponent implements OnInit, OnDestroy {
     // Initialize players by default
     this.courtRenderer.initializeDefaultPlayers();
     this.courtRenderer.render();
-    this.updatePlayerCount();
-  }
-
-  /**
-   * Initialize default players on the court
-   */
-  protected initializePlayers(): void {
-    if (!this.courtRenderer) return;
-
-    this.courtRenderer.initializeDefaultPlayers();
-    this.courtRenderer.refresh();
-    this.updatePlayerCount();
-  }
-
-  /**
-   * Clear all players from the court
-   */
-  protected clearAllPlayers(): void {
-    if (!this.courtRenderer) return;
-
-    this.courtRenderer.clearPlayers();
     this.updatePlayerCount();
   }
 

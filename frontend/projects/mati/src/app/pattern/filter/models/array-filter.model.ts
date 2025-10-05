@@ -3,7 +3,7 @@ import { BaseFilter } from './base-filter.model';
 /**
  * Array filter for multi-select inputs
  */
-export class ArrayFilter<T = any> extends BaseFilter<T[]> {
+export class ArrayFilter<T = unknown> extends BaseFilter<T[]> {
   protected getTypeDefaultValue(): T[] {
     return [];
   }
@@ -54,5 +54,12 @@ export class ArrayFilter<T = any> extends BaseFilter<T[]> {
     } else {
       this.add(value);
     }
+  }
+
+  /**
+   * Array filters don't use keyboard shortcuts
+   */
+  override initShortcuts(): void {
+    // No shortcuts for array filters
   }
 }

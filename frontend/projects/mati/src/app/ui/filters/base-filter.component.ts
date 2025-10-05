@@ -1,11 +1,11 @@
 import { Directive, input, output, model, effect } from '@angular/core';
 
 /**
- * Base class for all filter UI components
+ * Abstract base class for all filter UI components
  * Provides common functionality for value synchronization
  */
 @Directive()
-export abstract class BaseFilterComponent<T = any> {
+export abstract class BaseFilterComponent<T = unknown> {
   // Common inputs
   id = input.required<string>();
   label = input<string>('');
