@@ -311,18 +311,19 @@ export class TacticalBoardComponent implements OnDestroy {
       
       if (isBottom) {
         // Bottom zone at yPosition=600: extends UPWARD (decreasing Y)
-        // sweep from angle PI (left) to PI/2 (up)
+        // Use angles that go from left to up: PI to PI/2
         const angle = Math.PI - t * (Math.PI / 2);
         const x = leftPostX + R * Math.cos(angle);
-        const offsetY = R * Math.sin(angle); // 0 to R
-        const y = yPosition - offsetY; // Go upward (decrease Y)
+        const offsetY = R * Math.sin(angle); // sin goes from 0 to 1
+        const y = yPosition - offsetY; // Subtract to go upward
         points.push({x, y});
       } else {
         // Top zone at yPosition=0: extends DOWNWARD (increasing Y)
-        // sweep from angle PI (left) to 3*PI/2 (down)
-        const angle = Math.PI + t * (Math.PI / 2);
+        // Use angles but compute Y differently to ensure downward movement
+        const angle = Math.PI - t * (Math.PI / 2); // PI to PI/2
         const x = leftPostX + R * Math.cos(angle);
-        const y = yPosition + R * Math.sin(angle);
+        const offsetY = R * Math.sin(angle); // sin goes from 0 to 1
+        const y = yPosition + offsetY; // ADD to go downward
         points.push({x, y});
       }
     }
@@ -344,18 +345,19 @@ export class TacticalBoardComponent implements OnDestroy {
       
       if (isBottom) {
         // Bottom zone at yPosition=600: extends UPWARD (decreasing Y)
-        // sweep from angle PI/2 (up) to 0 (right)
+        // Use angles that go from up to right: PI/2 to 0
         const angle = Math.PI / 2 - t * (Math.PI / 2);
         const x = rightPostX + R * Math.cos(angle);
-        const offsetY = R * Math.sin(angle); // R to 0
-        const y = yPosition - offsetY; // Go upward (decrease Y)
+        const offsetY = R * Math.sin(angle); // sin goes from 1 to 0
+        const y = yPosition - offsetY; // Subtract to stay upward
         points.push({x, y});
       } else {
         // Top zone at yPosition=0: extends DOWNWARD (increasing Y)
-        // sweep from angle 3*PI/2 (down) to 2*PI (right)
-        const angle = 3 * Math.PI / 2 + t * (Math.PI / 2);
+        // Use angles but compute Y differently to ensure downward movement
+        const angle = Math.PI / 2 - t * (Math.PI / 2); // PI/2 to 0
         const x = rightPostX + R * Math.cos(angle);
-        const y = yPosition + R * Math.sin(angle);
+        const offsetY = R * Math.sin(angle); // sin goes from 1 to 0
+        const y = yPosition + offsetY; // ADD to stay downward
         points.push({x, y});
       }
     }
