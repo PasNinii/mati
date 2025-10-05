@@ -149,7 +149,6 @@ export class TacticalBoardComponent implements OnDestroy {
   private createGrid() {
     const width = this.stage().width();
     const height = this.stage().height();
-    console.log('Creating court with dimensions:', width, height, 'pxPerM:', this.pixelsPerMeter());
     this.createHandballCourt(width, height);
   }
 
@@ -197,7 +196,7 @@ export class TacticalBoardComponent implements OnDestroy {
       goalWidthM,
       courtWidthM,
       6,
-      isBottom
+      isBottom,
     );
     console.log('6m path:', sixMeterPath);
     const sixMeterZone = new Konva.Path({
@@ -215,7 +214,7 @@ export class TacticalBoardComponent implements OnDestroy {
       goalWidthM,
       courtWidthM,
       9,
-      isBottom
+      isBottom,
     );
     console.log('9m path:', nineMeterPath);
     const nineMeterZone = new Konva.Path({
@@ -226,13 +225,15 @@ export class TacticalBoardComponent implements OnDestroy {
       fill: undefined, // No fill
     });
     this.layer().add(nineMeterZone);
-    
+
     // Draw the goal line (3m wide, centered)
     const halfGoalPx = (goalWidthM / 2) * pixelsPerMeter;
     const goalLine = new Konva.Line({
       points: [
-        centerX - halfGoalPx, yPosition,
-        centerX + halfGoalPx, yPosition
+        centerX - halfGoalPx,
+        yPosition,
+        centerX + halfGoalPx,
+        yPosition,
       ],
       stroke: '#000000',
       strokeWidth: 4,
@@ -242,21 +243,21 @@ export class TacticalBoardComponent implements OnDestroy {
 
   /**
    * Builds the SVG path for a zone (6m or 9m) using exact geometry.
-   * 
+   *
    * Algorithm explanation:
    * The handball zone is defined as all points at distance R from the nearest element:
    * - The goal segment (3m wide, centered)
    * - The goal line (entire width)
-   * 
+   *
    * The resulting shape is composed of:
    * 1. Two circular arcs (quarter circles) around each goal post
    * 2. A straight line parallel to the goal line connecting the arcs
-   * 
+   *
    * Construction:
    * - Left arc: from horizontal left (-R from post) to vertical top (R from goal line)
    * - Straight line: horizontally from left post to right post at distance R
    * - Right arc: from vertical top to horizontal right (+R from post)
-   * 
+   *
    * @param centerX X-coordinate of zone center in pixels
    * @param yPosition Y-coordinate of goal line in pixels
    * @param pxPerM Pixels per meter conversion factor
@@ -273,43 +274,43 @@ export class TacticalBoardComponent implements OnDestroy {
     goalWidthM: number,
     courtWidthM: number,
     radiusM: number,
-    isBottom: boolean
+    isBottom: boolean,
   ): string {
     // Convert to pixels
     const R = radiusM * pxPerM;
     const halfGoal = (goalWidthM / 2) * pxPerM;
-    
+
     // Direction multiplier for top vs bottom
     const dir = isBottom ? 1 : -1;
-    
+
     // Goal posts positions
     const leftPostX = centerX - halfGoal;
     const rightPostX = centerX + halfGoal;
-    
+
     // Clear and simple approach: build path segment by segment
-    const points: {x: number, y: number}[] = [];
+    const points: { x: number; y: number }[] = [];
     const numSegments = 100;
-    
+
     // Key coordinates:
     // Posts are at: (leftPostX, yPosition) and (rightPostX, yPosition)
     // The zone always extends TOWARD THE CENTER of the field
     // For top zone (yPosition=0): zone extends from 0 to +R (downward into field)
     // For bottom zone (yPosition=height): zone extends from height to height-R (upward into field)
-    
+
     // So both zones extend "inward" but in opposite Y directions
     // Top zone: isBottom=false, yPosition=0, extend downward: yExtent = 0 + R
     // Bottom zone: isBottom=true, yPosition=600, extend upward: yExtent = 600 - R
-    
+
     const yExtent = isBottom ? yPosition - R : yPosition + R;
-    
+
     // PART 1: Left quarter circle
     // Center: (leftPostX, yPosition), Radius: R
     // Start point: (leftPostX - R, yPosition) - leftmost point on goal line
     // End point: (leftPostX, yExtent) - extends into the field
-    
+
     for (let i = 0; i <= numSegments / 4; i++) {
       const t = i / (numSegments / 4);
-      
+
       if (isBottom) {
         // Bottom zone at yPosition=600: extends UPWARD (decreasing Y)
         // Use angles that go from left to up: PI to PI/2
@@ -317,7 +318,7 @@ export class TacticalBoardComponent implements OnDestroy {
         const x = leftPostX + R * Math.cos(angle);
         const offsetY = R * Math.sin(angle); // sin goes from 0 to 1
         const y = yPosition - offsetY; // Subtract to go upward
-        points.push({x, y});
+        points.push({ x, y });
       } else {
         // Top zone at yPosition=0: extends DOWNWARD (increasing Y)
         // Use angles but compute Y differently to ensure downward movement
@@ -325,25 +326,25 @@ export class TacticalBoardComponent implements OnDestroy {
         const x = leftPostX + R * Math.cos(angle);
         const offsetY = R * Math.sin(angle); // sin goes from 0 to 1
         const y = yPosition + offsetY; // ADD to go downward
-        points.push({x, y});
+        points.push({ x, y });
       }
     }
-    
+
     // PART 2: Straight line at yExtent from left post to right post
     for (let i = 1; i <= numSegments / 4; i++) {
       const t = i / (numSegments / 4);
       const x = leftPostX + t * (rightPostX - leftPostX);
-      points.push({x, y: yExtent});
+      points.push({ x, y: yExtent });
     }
-    
+
     // PART 3: Right quarter circle
     // Center: (rightPostX, yPosition), Radius: R
     // Start point: (rightPostX, yExtent) - extends into the field
     // End point: (rightPostX + R, yPosition) - rightmost point on goal line
-    
+
     for (let i = 1; i <= numSegments / 4; i++) {
       const t = i / (numSegments / 4);
-      
+
       if (isBottom) {
         // Bottom zone at yPosition=600: extends UPWARD (decreasing Y)
         // Use angles that go from up to right: PI/2 to 0
@@ -351,7 +352,7 @@ export class TacticalBoardComponent implements OnDestroy {
         const x = rightPostX + R * Math.cos(angle);
         const offsetY = R * Math.sin(angle); // sin goes from 1 to 0
         const y = yPosition - offsetY; // Subtract to stay upward
-        points.push({x, y});
+        points.push({ x, y });
       } else {
         // Top zone at yPosition=0: extends DOWNWARD (increasing Y)
         // Use angles but compute Y differently to ensure downward movement
@@ -359,22 +360,30 @@ export class TacticalBoardComponent implements OnDestroy {
         const x = rightPostX + R * Math.cos(angle);
         const offsetY = R * Math.sin(angle); // sin goes from 1 to 0
         const y = yPosition + offsetY; // ADD to stay downward
-        points.push({x, y});
+        points.push({ x, y });
       }
     }
-    
+
     // Build SVG path
     if (points.length === 0) return '';
-    
+
     let path = `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
     for (let i = 1; i < points.length; i++) {
       path += ` L ${points[i].x.toFixed(2)} ${points[i].y.toFixed(2)}`;
     }
-    
-    console.log(`Zone ${radiusM}m (${isBottom ? 'bottom' : 'top'}): yPosition=${yPosition}, yExtent=${yExtent}, R=${R}px`);
-    console.log(`  First 3 points:`, points.slice(0, 3).map(p => `(${p.x.toFixed(0)},${p.y.toFixed(0)})`));
-    console.log(`  Last 3 points:`, points.slice(-3).map(p => `(${p.x.toFixed(0)},${p.y.toFixed(0)})`));
-    
+
+    console.log(
+      `Zone ${radiusM}m (${isBottom ? 'bottom' : 'top'}): yPosition=${yPosition}, yExtent=${yExtent}, R=${R}px`,
+    );
+    console.log(
+      `  First 3 points:`,
+      points.slice(0, 3).map((p) => `(${p.x.toFixed(0)},${p.y.toFixed(0)})`),
+    );
+    console.log(
+      `  Last 3 points:`,
+      points.slice(-3).map((p) => `(${p.x.toFixed(0)},${p.y.toFixed(0)})`),
+    );
+
     return path;
   }
 
