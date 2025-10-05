@@ -1,3 +1,6 @@
+import Konva from 'konva';
+import { CourtEntity, EntityCoordinates } from './court-entity.model';
+
 /**
  * Player position types for handball
  */
@@ -35,37 +38,55 @@ export enum PlayerRole {
 }
 
 /**
- * Interface for player positioning on the court
+ * Player styling configuration
  */
-export interface PlayerCoordinates {
-  x: number;
-  y: number;
+export interface PlayerStyles {
+  homeAttackColor: string;
+  homeDefenseColor: string;
+  awayAttackColor: string;
+  awayDefenseColor: string;
+  playerRadius: number;
+  strokeWidth: number;
+  strokeColor: string;
+  textColor: string;
+  fontSize: number;
 }
+
+export const DEFAULT_PLAYER_STYLES: PlayerStyles = {
+  homeAttackColor: '#2196F3',
+  homeDefenseColor: '#1976D2',
+  awayAttackColor: '#F44336',
+  awayDefenseColor: '#D32F2F',
+  playerRadius: 20,
+  strokeWidth: 2,
+  strokeColor: '#FFFFFF',
+  textColor: '#FFFFFF',
+  fontSize: 12,
+};
 
 /**
  * Player class representing a handball player on the tactical board
  */
-export class Player {
-  id: string;
+export class Player extends CourtEntity {
   team: Team;
   role: PlayerRole;
   position: PlayerPosition;
-  coordinates: PlayerCoordinates;
-  draggable: boolean;
+  private styles: PlayerStyles;
 
   constructor(
     team: Team,
     role: PlayerRole,
     position: PlayerPosition,
-    coordinates: PlayerCoordinates,
+    coordinates: EntityCoordinates,
     draggable: boolean = true,
+    styles: PlayerStyles = DEFAULT_PLAYER_STYLES,
   ) {
-    this.id = `${team}-${role}-${position}-${Date.now()}-${Math.random()}`;
+    const id = `${team}-${role}-${position}-${Date.now()}-${Math.random()}`;
+    super(id, coordinates, draggable);
     this.team = team;
     this.role = role;
     this.position = position;
-    this.coordinates = coordinates;
-    this.draggable = draggable;
+    this.styles = styles;
   }
 
   /**
@@ -76,10 +97,106 @@ export class Player {
   }
 
   /**
-   * Update player coordinates
+   * Gets the appropriate color for this player based on team and role
    */
-  updateCoordinates(x: number, y: number): void {
-    this.coordinates = { x, y };
+  private getColor(): string {
+    if (this.team === Team.HOME) {
+      return this.role === PlayerRole.ATTACK
+        ? this.styles.homeAttackColor
+        : this.styles.homeDefenseColor;
+    } else {
+      return this.role === PlayerRole.ATTACK
+        ? this.styles.awayAttackColor
+        : this.styles.awayDefenseColor;
+    }
+  }
+
+  /**
+   * Creates the Konva shape for the player
+   */
+  createShape(config: {
+    pixelsPerMeter: number;
+    showCoordinates: boolean;
+  }): Konva.Group {
+    const group = new Konva.Group({
+      x: this.coordinates.x,
+      y: this.coordinates.y,
+      draggable: this.draggable,
+    });
+
+    // Create circle for player
+    const circle = new Konva.Circle({
+      radius: this.styles.playerRadius,
+      fill: this.getColor(),
+      stroke: this.styles.strokeColor,
+      strokeWidth: this.styles.strokeWidth,
+    });
+
+    // Create text label
+    const text = new Konva.Text({
+      text: this.getLabel(),
+      fontSize: this.styles.fontSize,
+      fontStyle: 'bold',
+      fill: this.styles.textColor,
+      align: 'center',
+      verticalAlign: 'middle',
+    });
+
+    // Center the text within the circle
+    text.offsetX(text.width() / 2);
+    text.offsetY(text.height() / 2);
+
+    group.add(circle);
+    group.add(text);
+
+    // Add coordinates text if enabled
+    if (config.showCoordinates) {
+      const coordsText = this.createCoordinatesText(
+        config.pixelsPerMeter,
+        this.styles.playerRadius + 5,
+      );
+      group.add(coordsText);
+    }
+
+    // Setup drag handlers
+    this.setupDragHandlers(group, config.pixelsPerMeter);
+
+    return group;
+  }
+
+  /**
+   * Perform actions on the player (e.g., pass, shoot, move to position)
+   */
+  performAction(actionType: string, ...args: unknown[]): void {
+    switch (actionType) {
+      case 'pass':
+        // Could animate a pass to another player
+        console.log(`${this.getLabel()} passes to`, args[0]);
+        break;
+      case 'shoot':
+        // Could animate a shot
+        console.log(`${this.getLabel()} shoots`);
+        break;
+      case 'moveTo':
+        // Could animate movement to a position
+        const [x, y] = args as [number, number];
+        console.log(`${this.getLabel()} moves to (${x}, ${y})`);
+        this.updateCoordinates(x, y);
+        break;
+      case 'highlight':
+        // Could highlight the player temporarily
+        console.log(`${this.getLabel()} highlighted`);
+        break;
+      default:
+        console.warn(`Unknown action type: ${actionType}`);
+    }
+  }
+
+  /**
+   * Updates player styling
+   */
+  setStyles(styles: Partial<PlayerStyles>): void {
+    this.styles = { ...this.styles, ...styles };
   }
 }
 

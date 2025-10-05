@@ -8,52 +8,14 @@ import {
   AttackPosition,
   DEFAULT_ATTACK_POSITIONS,
   DEFAULT_DEFENSE_POSITIONS,
+  DEFAULT_PLAYER_STYLES,
+  PlayerStyles,
 } from '../models/player.model';
-import { Ball } from '../models/ball.model';
+import { Ball, DEFAULT_BALL_STYLES, BallStyles } from '../models/ball.model';
+import { CourtEntity } from '../models/court-entity.model';
 
-/**
- * Player styling configuration
- */
-export interface PlayerStyles {
-  homeAttackColor: string;
-  homeDefenseColor: string;
-  awayAttackColor: string;
-  awayDefenseColor: string;
-  playerRadius: number;
-  strokeWidth: number;
-  strokeColor: string;
-  textColor: string;
-  fontSize: number;
-}
-
-export const DEFAULT_PLAYER_STYLES: PlayerStyles = {
-  homeAttackColor: '#2196F3', // Blue for home attack
-  homeDefenseColor: '#1976D2', // Darker blue for home defense
-  awayAttackColor: '#F44336', // Red for away attack
-  awayDefenseColor: '#D32F2F', // Darker red for away defense
-  playerRadius: 20,
-  strokeWidth: 2,
-  strokeColor: '#FFFFFF',
-  textColor: '#FFFFFF',
-  fontSize: 12,
-};
-
-/**
- * Ball styling configuration
- */
-export interface BallStyles {
-  ballColor: string;
-  ballRadius: number;
-  strokeWidth: number;
-  strokeColor: string;
-}
-
-export const DEFAULT_BALL_STYLES: BallStyles = {
-  ballColor: '#000000', // Black for the ball
-  ballRadius: 12,
-  strokeWidth: 2,
-  strokeColor: '#FFFFFF',
-};
+// Re-export styles for backward compatibility
+export { DEFAULT_PLAYER_STYLES, PlayerStyles, DEFAULT_BALL_STYLES, BallStyles };
 
 /**
  * Renders a complete handball court with all its elements:
@@ -67,12 +29,8 @@ export class HandballCourtRenderer {
   private layer: Konva.Layer;
   private config: CourtConfig;
   private styles: CourtStyles;
-  private playerStyles: PlayerStyles;
-  private ballStyles: BallStyles;
-  private players: Player[] = [];
-  private playerShapes: Map<string, Konva.Group> = new Map();
-  private ball: Ball | null = null;
-  private ballShape: Konva.Group | null = null;
+  private entities: CourtEntity[] = [];
+  private entityShapes: Map<string, Konva.Group> = new Map();
   private showCoordinates: boolean = false;
 
   constructor(
@@ -85,8 +43,7 @@ export class HandballCourtRenderer {
     this.layer = layer;
     this.config = config;
     this.styles = styles;
-    this.playerStyles = playerStyles;
-    this.ballStyles = ballStyles;
+    // Styles are now passed to entities during creation
   }
 
   /**
@@ -96,8 +53,7 @@ export class HandballCourtRenderer {
     this.renderCourtBackground();
     this.renderGoalAreas();
     this.renderCenterElements();
-    this.renderPlayers();
-    this.renderBall();
+    this.renderEntities();
     this.layer.draw();
   }
 
@@ -107,36 +63,38 @@ export class HandballCourtRenderer {
    * regardless of half or full court mode.
    */
   initializeDefaultPlayers(): void {
-    this.players = [];
-
     const pixelsPerMeter = this.config.pixelsPerMeter;
 
-    // Add home team attack players (positioned in upper part using meters from goal)
+    // Add home team attack players
     Object.entries(DEFAULT_ATTACK_POSITIONS).forEach(([position, coords]) => {
       const player = new Player(
         Team.HOME,
         PlayerRole.ATTACK,
         position as AttackPosition,
         {
-          x: coords.xMeters * pixelsPerMeter, // Convert meters to pixels from left (x=0)
-          y: coords.yMeters * pixelsPerMeter, // Convert meters to pixels from top (y=0)
+          x: coords.xMeters * pixelsPerMeter,
+          y: coords.yMeters * pixelsPerMeter,
         },
+        true,
+        DEFAULT_PLAYER_STYLES,
       );
-      this.players.push(player);
+      this.addEntity(player);
     });
 
-    // Add away team defense players (positioned in upper part using meters from goal)
+    // Add away team defense players
     DEFAULT_DEFENSE_POSITIONS.forEach((posData) => {
       const player = new Player(
         Team.AWAY,
         PlayerRole.DEFENSE,
         posData.position,
         {
-          x: posData.xMeters * pixelsPerMeter, // Convert meters to pixels from left (x=0)
-          y: posData.yMeters * pixelsPerMeter, // Convert meters to pixels from top (y=0)
+          x: posData.xMeters * pixelsPerMeter,
+          y: posData.yMeters * pixelsPerMeter,
         },
+        true,
+        DEFAULT_PLAYER_STYLES,
       );
-      this.players.push(player);
+      this.addEntity(player);
     });
 
     // Initialize ball at CB (Center Back) attack position by default
@@ -276,163 +234,85 @@ export class HandballCourtRenderer {
   }
 
   /**
-   * Renders all players on the court
+   * Renders all entities on the court (players, ball, etc.)
    */
-  private renderPlayers(): void {
-    this.players.forEach((player) => {
-      this.renderPlayer(player);
+  private renderEntities(): void {
+    this.entities.forEach((entity) => {
+      this.renderEntity(entity);
     });
   }
 
   /**
-   * Renders a single player with circle and label
+   * Renders a single entity using polymorphic createShape method
    */
-  private renderPlayer(player: Player): void {
-    const group = new Konva.Group({
-      x: player.coordinates.x,
-      y: player.coordinates.y,
-      draggable: player.draggable,
+  private renderEntity(entity: CourtEntity): void {
+    const shape = entity.createShape({
+      pixelsPerMeter: this.config.pixelsPerMeter,
+      showCoordinates: this.showCoordinates,
     });
 
-    // Determine player color based on team and role
-    const fillColor = this.getPlayerColor(player);
-
-    // Create circle for player
-    const circle = new Konva.Circle({
-      radius: this.playerStyles.playerRadius,
-      fill: fillColor,
-      stroke: this.playerStyles.strokeColor,
-      strokeWidth: this.playerStyles.strokeWidth,
-    });
-
-    // Create text label
-    const text = new Konva.Text({
-      text: player.getLabel(),
-      fontSize: this.playerStyles.fontSize,
-      fontStyle: 'bold',
-      fill: this.playerStyles.textColor,
-      align: 'center',
-      verticalAlign: 'middle',
-    });
-
-    // Center the text within the circle
-    text.offsetX(text.width() / 2);
-    text.offsetY(text.height() / 2);
-
-    group.add(circle);
-    group.add(text);
-
-    // Add coordinates text if enabled
-    if (this.showCoordinates) {
-      const xMeters = (
-        player.coordinates.x / this.config.pixelsPerMeter
-      ).toFixed(1);
-      const yMeters = (
-        player.coordinates.y / this.config.pixelsPerMeter
-      ).toFixed(1);
-      const coordsText = new Konva.Text({
-        name: 'coords-text',
-        text: `(${xMeters}m, ${yMeters}m)`,
-        fontSize: 10,
-        fill: '#000000',
-        align: 'center',
-        y: this.playerStyles.playerRadius + 5,
-      });
-      coordsText.offsetX(coordsText.width() / 2);
-      group.add(coordsText);
-    }
-
-    // Handle drag events to update player coordinates
-    group.on('dragmove', () => {
-      player.updateCoordinates(group.x(), group.y());
-      // Update coordinates display if enabled
-      if (this.showCoordinates) {
-        const coordsText = group.findOne('.coords-text') as Konva.Text;
-        if (coordsText) {
-          const xMeters = (
-            player.coordinates.x / this.config.pixelsPerMeter
-          ).toFixed(1);
-          const yMeters = (
-            player.coordinates.y / this.config.pixelsPerMeter
-          ).toFixed(1);
-          coordsText.text(`(${xMeters}m, ${yMeters}m)`);
-          coordsText.offsetX(coordsText.width() / 2);
-        }
-      }
-    });
-
-    this.playerShapes.set(player.id, group);
-    this.layer.add(group);
+    this.entityShapes.set(entity.id, shape);
+    this.layer.add(shape);
   }
 
   /**
-   * Gets the appropriate color for a player based on team and role
+   * Adds a new entity to the court
    */
-  private getPlayerColor(player: Player): string {
-    if (player.team === Team.HOME) {
-      return player.role === PlayerRole.ATTACK
-        ? this.playerStyles.homeAttackColor
-        : this.playerStyles.homeDefenseColor;
-    } else {
-      return player.role === PlayerRole.ATTACK
-        ? this.playerStyles.awayAttackColor
-        : this.playerStyles.awayDefenseColor;
-    }
-  }
-
-  /**
-   * Adds a new player to the court
-   */
-  addPlayer(player: Player): void {
-    this.players.push(player);
-    this.renderPlayer(player);
+  addEntity(entity: CourtEntity): void {
+    this.entities.push(entity);
+    this.renderEntity(entity);
     this.layer.draw();
   }
 
   /**
-   * Removes a player from the court
+   * Removes an entity from the court
    */
-  removePlayer(playerId: string): void {
-    const playerIndex = this.players.findIndex((p) => p.id === playerId);
-    if (playerIndex !== -1) {
-      this.players.splice(playerIndex, 1);
-      const shape = this.playerShapes.get(playerId);
+  removeEntity(entityId: string): void {
+    const entityIndex = this.entities.findIndex((e) => e.id === entityId);
+    if (entityIndex !== -1) {
+      this.entities.splice(entityIndex, 1);
+      const shape = this.entityShapes.get(entityId);
       if (shape) {
         shape.destroy();
-        this.playerShapes.delete(playerId);
+        this.entityShapes.delete(entityId);
         this.layer.draw();
       }
     }
   }
 
   /**
-   * Gets all current players
+   * Gets all entities of a specific type
    */
-  getPlayers(): Player[] {
-    return [...this.players];
+  getEntities<T extends CourtEntity>(type: new (...args: any[]) => T): T[] {
+    return this.entities.filter((e) => e instanceof type) as T[];
   }
 
   /**
-   * Clears all players from the court
+   * Gets all current players
    */
-  clearPlayers(): void {
-    this.players = [];
-    this.playerShapes.forEach((shape) => shape.destroy());
-    this.playerShapes.clear();
+  getPlayers(): Player[] {
+    return this.getEntities(Player);
+  }
+
+  /**
+   * Clears all entities from the court
+   */
+  clearEntities(): void {
+    this.entities = [];
+    this.entityShapes.forEach((shape) => shape.destroy());
+    this.entityShapes.clear();
     this.layer.draw();
   }
 
   /**
-   * Sets whether to show player coordinates
+   * Sets whether to show entity coordinates
    */
   setShowCoordinates(show: boolean): void {
     this.showCoordinates = show;
-    // Re-render players to update coordinate display
-    this.playerShapes.forEach((shape) => shape.destroy());
-    this.playerShapes.clear();
-    this.ballShape?.destroy();
-    this.renderPlayers();
-    this.renderBall();
+    // Re-render all entities to update coordinate display
+    this.entityShapes.forEach((shape) => shape.destroy());
+    this.entityShapes.clear();
+    this.renderEntities();
     this.layer.draw();
   }
 
@@ -444,124 +324,50 @@ export class HandballCourtRenderer {
     if (styles) this.styles = styles;
 
     this.layer.destroyChildren();
-    this.playerShapes.clear();
-    this.ballShape = null;
+    this.entityShapes.clear();
     this.render();
-  }
-
-  /**
-   * Renders the ball if it exists
-   */
-  private renderBall(): void {
-    if (this.ball) {
-      this.createBallShape(this.ball);
-    }
-  }
-
-  /**
-   * Creates and renders the ball shape
-   */
-  private createBallShape(ball: Ball): void {
-    const group = new Konva.Group({
-      x: ball.coordinates.x,
-      y: ball.coordinates.y,
-      draggable: ball.draggable,
-    });
-
-    // Create circle for ball
-    const circle = new Konva.Circle({
-      radius: this.ballStyles.ballRadius,
-      fill: this.ballStyles.ballColor,
-      stroke: this.ballStyles.strokeColor,
-      strokeWidth: this.ballStyles.strokeWidth,
-    });
-
-    group.add(circle);
-
-    // Add coordinates text if enabled
-    if (this.showCoordinates) {
-      const xMeters = (ball.coordinates.x / this.config.pixelsPerMeter).toFixed(
-        1,
-      );
-      const yMeters = (ball.coordinates.y / this.config.pixelsPerMeter).toFixed(
-        1,
-      );
-      const coordsText = new Konva.Text({
-        name: 'coords-text',
-        text: `(${xMeters}m, ${yMeters}m)`,
-        fontSize: 10,
-        fill: '#000000',
-        align: 'center',
-        y: this.ballStyles.ballRadius + 5,
-      });
-      coordsText.offsetX(coordsText.width() / 2);
-      group.add(coordsText);
-    }
-
-    // Handle drag events to update ball coordinates
-    group.on('dragmove', () => {
-      ball.updateCoordinates(group.x(), group.y());
-      // Update coordinates display if enabled
-      if (this.showCoordinates) {
-        const coordsText = group.findOne('.coords-text') as Konva.Text;
-        if (coordsText) {
-          const xMeters = (
-            ball.coordinates.x / this.config.pixelsPerMeter
-          ).toFixed(1);
-          const yMeters = (
-            ball.coordinates.y / this.config.pixelsPerMeter
-          ).toFixed(1);
-          coordsText.text(`(${xMeters}m, ${yMeters}m)`);
-          coordsText.offsetX(coordsText.width() / 2);
-        }
-      }
-    });
-
-    this.ballShape = group;
-    this.layer.add(group);
   }
 
   /**
    * Adds the ball to the court at a specific position
    */
   addBall(x?: number, y?: number): void {
+    // Remove existing ball first
+    this.removeBall();
+
     // Default position: center of the court
     const defaultX = (this.config.widthM * this.config.pixelsPerMeter) / 2;
     const defaultY = (this.config.heightM * this.config.pixelsPerMeter) / 2;
 
-    this.ball = new Ball({ x: x ?? defaultX, y: y ?? defaultY }, true);
+    const ball = new Ball(
+      { x: x ?? defaultX, y: y ?? defaultY },
+      true,
+      DEFAULT_BALL_STYLES,
+    );
 
-    if (this.ballShape) {
-      this.ballShape.destroy();
-    }
-
-    this.createBallShape(this.ball);
-    this.layer.draw();
+    this.addEntity(ball);
   }
 
   /**
    * Removes the ball from the court
    */
   removeBall(): void {
-    this.ball = null;
-    if (this.ballShape) {
-      this.ballShape.destroy();
-      this.ballShape = null;
-      this.layer.draw();
-    }
+    const balls = this.getEntities(Ball);
+    balls.forEach((ball) => this.removeEntity(ball.id));
   }
 
   /**
    * Gets the current ball
    */
   getBall(): Ball | null {
-    return this.ball;
+    const balls = this.getEntities(Ball);
+    return balls.length > 0 ? balls[0] : null;
   }
 
   /**
    * Checks if the ball is currently on the court
    */
   hasBall(): boolean {
-    return this.ball !== null;
+    return this.getEntities(Ball).length > 0;
   }
 }

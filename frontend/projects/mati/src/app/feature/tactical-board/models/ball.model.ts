@@ -1,40 +1,96 @@
+import Konva from 'konva';
+import { CourtEntity, EntityCoordinates } from './court-entity.model';
+
 /**
- * Interface for ball positioning on the court
+ * Ball styling configuration
  */
-export interface BallCoordinates {
-  x: number;
-  y: number;
+export interface BallStyles {
+  ballColor: string;
+  ballRadius: number;
+  strokeWidth: number;
+  strokeColor: string;
 }
+
+export const DEFAULT_BALL_STYLES: BallStyles = {
+  ballColor: '#000000',
+  ballRadius: 12,
+  strokeWidth: 2,
+  strokeColor: '#FFFFFF',
+};
 
 /**
  * Ball class representing a handball on the tactical board
  */
-export class Ball {
-  id: string;
-  coordinates: BallCoordinates;
-  draggable: boolean;
+export class Ball extends CourtEntity {
+  private styles: BallStyles;
 
   constructor(
-    coordinates: BallCoordinates = { x: 0, y: 0 },
+    coordinates: EntityCoordinates = { x: 0, y: 0 },
     draggable: boolean = true,
+    styles: BallStyles = DEFAULT_BALL_STYLES,
   ) {
-    this.id = 'ball';
-    this.coordinates = coordinates;
-    this.draggable = draggable;
+    super('ball', coordinates, draggable);
+    this.styles = styles;
   }
 
   /**
-   * Updates the ball's coordinates
+   * Creates the Konva shape for the ball
    */
-  updateCoordinates(x: number, y: number): void {
-    this.coordinates = { x, y };
+  createShape(config: {
+    pixelsPerMeter: number;
+    showCoordinates: boolean;
+  }): Konva.Group {
+    const group = new Konva.Group({
+      x: this.coordinates.x,
+      y: this.coordinates.y,
+      draggable: this.draggable,
+    });
+
+    // Create circle for ball
+    const circle = new Konva.Circle({
+      radius: this.styles.ballRadius,
+      fill: this.styles.ballColor,
+      stroke: this.styles.strokeColor,
+      strokeWidth: this.styles.strokeWidth,
+    });
+
+    group.add(circle);
+
+    // Add coordinates text if enabled
+    if (config.showCoordinates) {
+      const coordsText = this.createCoordinatesText(
+        config.pixelsPerMeter,
+        this.styles.ballRadius + 5,
+      );
+      group.add(coordsText);
+    }
+
+    // Setup drag handlers
+    this.setupDragHandlers(group, config.pixelsPerMeter);
+
+    return group;
   }
 
   /**
-   * Sets the ball's draggable state
+   * Perform actions on the ball (e.g., pass, shoot, etc.)
    */
-  setDraggable(draggable: boolean): void {
-    this.draggable = draggable;
+  performAction(actionType: string, ...args: unknown[]): void {
+    switch (actionType) {
+      case 'pass':
+        // Could animate a pass to another player
+        console.log('Ball passed to', args[0]);
+        break;
+      case 'shoot':
+        // Could animate a shot towards goal
+        console.log('Ball shot towards goal');
+        break;
+      case 'highlight':
+        // Could highlight the ball temporarily
+        console.log('Ball highlighted');
+        break;
+      default:
+        console.warn(`Unknown action type: ${actionType}`);
+    }
   }
 
   /**
@@ -45,6 +101,7 @@ export class Ball {
     yMeters: number,
     pixelsPerMeter: number,
     draggable: boolean = true,
+    styles?: BallStyles,
   ): Ball {
     return new Ball(
       {
@@ -52,6 +109,14 @@ export class Ball {
         y: yMeters * pixelsPerMeter,
       },
       draggable,
+      styles,
     );
+  }
+
+  /**
+   * Updates ball styling
+   */
+  setStyles(styles: Partial<BallStyles>): void {
+    this.styles = { ...this.styles, ...styles };
   }
 }
