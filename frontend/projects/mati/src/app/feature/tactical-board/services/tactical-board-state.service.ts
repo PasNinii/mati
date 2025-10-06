@@ -18,11 +18,19 @@ import {
 import { HandballCourtRenderer } from './handball-court-renderer.service';
 import { FilterService } from '../../../pattern/filter/filter.service';
 
+/**
+ * Facade service for the tactical board
+ * Responsibilities:
+ * - Link filter values to reactive signals
+ * - Manage Konva stage lifecycle
+ * - Coordinate rendering through HandballCourtRenderer
+ * - Sync filter changes to renderer
+ */
 @Injectable()
 export class TacticalBoardStateService implements OnDestroy {
   private readonly filterService = inject(FilterService);
 
-  // State signals - directly linked to filter values
+  // ===== Filter-linked signals =====
   public readonly pixelsPerMeter = linkedSignal<number>(() => {
     const filter = this.filterService.filters().get('pixelsPerMeter');
     return (filter?.value() as number) ?? 30;
@@ -32,10 +40,6 @@ export class TacticalBoardStateService implements OnDestroy {
     const filter = this.filterService.filters().get('courtHeight');
     return (filter?.value() as number) ?? 40;
   });
-
-  public readonly width = signal(20); // Not yet in filters
-
-  public readonly fullCourt = signal(false); // Not yet in filters
 
   public readonly showCoordinates = linkedSignal<boolean>(() => {
     const filter = this.filterService.filters().get('showCoordinates');
@@ -47,41 +51,53 @@ export class TacticalBoardStateService implements OnDestroy {
     return (filter?.value() as boolean) ?? true;
   });
 
+  // ===== Static configuration =====
+  public readonly width = signal(20); // Fixed width in meters
+  public readonly fullCourt = signal(false); // Half court mode by default
+
+  // ===== Computed values =====
   public readonly effectiveHeight = computed(() =>
     this.fullCourt() ? this.height() : this.height() / 2,
   );
 
+  // ===== Konva infrastructure =====
   private konvaContainer?: ElementRef<HTMLDivElement>;
-  public readonly stage = linkedSignal<Konva.Stage | null>(() => {
-    if (!this.konvaContainer) return null;
-
-    return new Konva.Stage({
-      container: this.konvaContainer.nativeElement,
-      width: this.width() * this.pixelsPerMeter(),
-      height: this.effectiveHeight() * this.pixelsPerMeter(),
-    });
-  });
-
+  private _stage?: Konva.Stage;
   public readonly layer = signal<Konva.Layer>(new Konva.Layer());
+
+  // ===== Court renderer =====
   private courtRenderer!: HandballCourtRenderer;
 
+  /**
+   * Gets the current Konva stage
+   */
+  public stage(): Konva.Stage | null {
+    return this._stage ?? null;
+  }
+
   constructor() {
-    // Watch for court configuration changes and re-render
+    this.setupEffects();
+  }
+
+  /**
+   * Sets up reactive effects to sync filter changes to renderer
+   */
+  private setupEffects(): void {
+    // Effect 1: Court configuration changes (size, scale)
     effect(() => {
-      // Track these signals to trigger re-render on changes
-      this.pixelsPerMeter();
-      this.height();
-      this.width();
-      this.fullCourt();
+      const ppm = this.pixelsPerMeter();
+      const h = this.height();
+      const w = this.width();
+      const full = this.fullCourt();
 
       untracked(() => {
         if (this.isInitialized()) {
-          this.initializeAndRenderCourt();
+          this.updateCourtConfiguration(ppm, w, h, full);
         }
       });
     });
 
-    // Watch for coordinate display toggle
+    // Effect 2: Coordinate display toggle
     effect(() => {
       const showCoords = this.showCoordinates();
       untracked(() => {
@@ -91,16 +107,12 @@ export class TacticalBoardStateService implements OnDestroy {
       });
     });
 
-    // Watch for ball visibility toggle
+    // Effect 3: Ball visibility toggle
     effect(() => {
       const shouldShowBall = this.showBall();
       untracked(() => {
         if (this.isInitialized()) {
-          if (shouldShowBall && !this.hasBall()) {
-            this.addBall();
-          } else if (!shouldShowBall && this.hasBall()) {
-            this.removeBall();
-          }
+          this.syncBallVisibility(shouldShowBall);
         }
       });
     });
@@ -114,7 +126,7 @@ export class TacticalBoardStateService implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.stage()?.destroy();
+    this._stage?.destroy();
   }
 
   /**
@@ -123,63 +135,74 @@ export class TacticalBoardStateService implements OnDestroy {
    */
   public setKonvaContainer(container: ElementRef<HTMLDivElement>): void {
     this.konvaContainer = container;
-    this.initializeAndRenderCourt();
+    this.initializeCourt();
   }
 
   /**
-   * Initializes Konva stage and renders the handball court
+   * Initializes the court for the first time
    */
-  private initializeAndRenderCourt(): void {
-    const currentStage = this.stage();
-    if (!currentStage) return;
+  private initializeCourt(): void {
+    if (!this.konvaContainer) return;
 
-    currentStage.add(this.layer());
+    // Create stage once
+    this._stage = new Konva.Stage({
+      container: this.konvaContainer.nativeElement,
+      width: this.width() * this.pixelsPerMeter(),
+      height: this.effectiveHeight() * this.pixelsPerMeter(),
+    });
+
+    this._stage.add(this.layer());
 
     const config = this.buildCourtConfig();
-    const styles = DEFAULT_COURT_STYLES;
+    this.courtRenderer = new HandballCourtRenderer(
+      this.layer(),
+      config,
+      DEFAULT_COURT_STYLES,
+    );
 
-    // If renderer exists, reinitialize it to preserve entities
-    if (this.courtRenderer) {
-      this.courtRenderer.reinitialize(config, styles);
-      this.courtRenderer.setShowCoordinates(this.showCoordinates());
-    } else {
-      // First time initialization
-      this.courtRenderer = new HandballCourtRenderer(
-        this.layer(),
-        config,
-        styles,
-      );
+    this.courtRenderer.setShowCoordinates(this.showCoordinates());
+    this.courtRenderer.render();
+    this.courtRenderer.initializeDefaultPlayers();
+  }
 
-      // Set initial showCoordinates state
-      this.courtRenderer.setShowCoordinates(this.showCoordinates());
+  /**
+   * Updates court configuration when filters change
+   * Optimized to resize stage and reinitialize renderer while preserving entities
+   */
+  private updateCourtConfiguration(
+    pixelsPerMeter: number,
+    width: number,
+    height: number,
+    fullCourt: boolean,
+  ): void {
+    if (!this._stage) return;
 
-      // Render court background
-      this.courtRenderer.render();
+    // Calculate new dimensions
+    const effectiveHeight = fullCourt ? height : height / 2;
+    const newWidth = width * pixelsPerMeter;
+    const newHeight = effectiveHeight * pixelsPerMeter;
 
-      // Add default players
-      this.courtRenderer.initializeDefaultPlayers();
+    // Resize stage WITHOUT recreating it
+    this._stage.width(newWidth);
+    this._stage.height(newHeight);
+
+    // Reinitialize court renderer with new config (preserves entity positions)
+    const config = this.buildCourtConfig();
+    this.courtRenderer.reinitialize(config, DEFAULT_COURT_STYLES);
+    this.courtRenderer.setShowCoordinates(this.showCoordinates());
+  }
+
+  /**
+   * Syncs ball visibility based on filter value
+   */
+  private syncBallVisibility(shouldShow: boolean): void {
+    const hasBall = this.courtRenderer.hasBall();
+
+    if (shouldShow && !hasBall) {
+      this.courtRenderer.addBall();
+    } else if (!shouldShow && hasBall) {
+      this.courtRenderer.removeBall();
     }
-  }
-
-  /**
-   * Adds the ball to the court at the center position
-   */
-  private addBall(): void {
-    this.courtRenderer.addBall();
-  }
-
-  /**
-   * Removes the ball from the court
-   */
-  private removeBall(): void {
-    this.courtRenderer.removeBall();
-  }
-
-  /**
-   * Checks if the ball is currently on the court
-   */
-  private hasBall(): boolean {
-    return this.courtRenderer.hasBall();
   }
 
   /**
@@ -191,7 +214,7 @@ export class TacticalBoardStateService implements OnDestroy {
       heightM: this.effectiveHeight(),
       pixelsPerMeter: this.pixelsPerMeter(),
       goalWidthM: DEFAULT_COURT_CONFIG.goalWidthM,
-      halfCourt: !this.fullCourt(), // Pass half court flag to renderer
+      halfCourt: !this.fullCourt(),
     };
   }
 }

@@ -79,6 +79,36 @@ export abstract class CourtEntity {
   }): Konva.Group;
 
   /**
+   * Sets the shape reference after creation
+   * This allows the entity to manipulate its own visual representation
+   */
+  setShape(shape: Konva.Group): void {
+    this.shape = shape;
+  }
+
+  /**
+   * Gets the current shape reference
+   */
+  getShape(): Konva.Group | undefined {
+    return this.shape;
+  }
+
+  /**
+   * Toggles the visibility of the coordinate display
+   * Returns true if the operation was successful
+   */
+  setCoordinatesVisible(visible: boolean): boolean {
+    if (!this.shape) return false;
+
+    const coordsText = this.shape.findOne('.coordinates');
+    if (coordsText) {
+      coordsText.visible(visible);
+      return true;
+    }
+    return false;
+  }
+
+  /**
    * Updates the coordinates display if shown
    */
   protected updateCoordinatesDisplay(

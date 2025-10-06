@@ -1,6 +1,5 @@
 import Konva from 'konva';
 import { CourtConfig, CourtStyles } from '../models/court-config.interface';
-import { HandballZone } from '../models/handball-zone';
 import {
   Player,
   Team,
@@ -13,48 +12,50 @@ import {
 } from '../models/player.model';
 import { Ball, DEFAULT_BALL_STYLES, BallStyles } from '../models/ball.model';
 import { CourtEntity } from '../models/court-entity.model';
+import { EntityManager } from './entity-manager.service';
+import { CourtRenderer } from './court-renderer.service';
+import { EntityRenderer } from './entity-renderer.service';
+import { StatePersistence } from './state-persistence.service';
 
 // Re-export styles for backward compatibility
 export { DEFAULT_PLAYER_STYLES, PlayerStyles, DEFAULT_BALL_STYLES, BallStyles };
 
 /**
- * Entity entry in the tracking map
- */
-interface EntityEntry {
-  entity: CourtEntity;
-  shape: Konva.Group;
-}
-
-/**
- * Renders a complete handball court with all its elements:
- * - Court background and borders
- * - Goal areas (6m and 9m zones)
- * - Goal lines
- * - Center line and circle
- * - Players (attack and defense)
+ * Orchestrates handball court rendering and entity management
+ * This is a facade that coordinates specialized services:
+ * - CourtRenderer: Draws court background and markings
+ * - EntityManager: Manages entity lifecycle
+ * - EntityRenderer: Renders entities
+ * - StatePersistence: Handles state save/restore
  */
 export class HandballCourtRenderer {
-  private layer: Konva.Layer;
-  private config: CourtConfig;
-  private styles: CourtStyles;
-  private entities: Map<string, EntityEntry> = new Map();
-  private showCoordinates: boolean = false;
+  private entityManager: EntityManager;
+  private courtRenderer: CourtRenderer;
+  private entityRenderer: EntityRenderer;
+  private statePersistence: StatePersistence;
 
-  constructor(layer: Konva.Layer, config: CourtConfig, styles: CourtStyles) {
-    this.layer = layer;
-    this.config = config;
-    this.styles = styles;
-    // Styles are now passed to entities during creation
+  constructor(
+    private layer: Konva.Layer,
+    private config: CourtConfig,
+    private styles: CourtStyles,
+  ) {
+    // Initialize specialized services
+    this.entityManager = new EntityManager();
+    this.courtRenderer = new CourtRenderer(layer, config, styles);
+    this.entityRenderer = new EntityRenderer(
+      layer,
+      this.entityManager,
+      config.pixelsPerMeter,
+    );
+    this.statePersistence = new StatePersistence(this.entityManager);
   }
 
   /**
    * Renders the complete handball court
    */
   render(): void {
-    this.renderCourtBackground();
-    this.renderGoalAreas();
-    this.renderCenterElements();
-    this.renderEntities();
+    this.courtRenderer.render();
+    this.entityRenderer.renderAll();
     this.layer.draw();
   }
 
@@ -62,11 +63,12 @@ export class HandballCourtRenderer {
    * Initialize default players (6 players per team in attack and defense)
    * Players are always positioned in the upper part of the court (from y=0)
    * regardless of half or full court mode.
+   * Optimized to batch all additions and draw once at the end.
    */
   initializeDefaultPlayers(): void {
     const pixelsPerMeter = this.config.pixelsPerMeter;
 
-    // Add home team attack players
+    // Add home team attack players (batched)
     Object.entries(DEFAULT_ATTACK_POSITIONS).forEach(([position, coords]) => {
       const player = new Player(
         Team.HOME,
@@ -79,10 +81,10 @@ export class HandballCourtRenderer {
         true,
         DEFAULT_PLAYER_STYLES,
       );
-      this.addEntity(player);
+      this.addEntity(player, true); // Batch mode - no draw yet
     });
 
-    // Add away team defense players
+    // Add away team defense players (batched)
     DEFAULT_DEFENSE_POSITIONS.forEach((posData) => {
       const player = new Player(
         Team.AWAY,
@@ -95,7 +97,7 @@ export class HandballCourtRenderer {
         true,
         DEFAULT_PLAYER_STYLES,
       );
-      this.addEntity(player);
+      this.addEntity(player, true); // Batch mode - no draw yet
     });
 
     // Initialize ball at CB (Center Back) attack position by default
@@ -103,177 +105,28 @@ export class HandballCourtRenderer {
     const ballX = cbPosition.xMeters * pixelsPerMeter;
     const ballY = cbPosition.yMeters * pixelsPerMeter;
     this.addBall(ballX, ballY);
-  }
 
-  /**
-   * Renders the court background and border
-   */
-  private renderCourtBackground(): void {
-    const width = this.config.widthM * this.config.pixelsPerMeter;
-    const height = this.config.heightM * this.config.pixelsPerMeter;
-
-    const background = new Konva.Rect({
-      x: 0,
-      y: 0,
-      width,
-      height,
-      fill: this.styles.courtColor,
-      stroke: this.styles.borderColor,
-      strokeWidth: this.styles.borderWidth,
-    });
-
-    this.layer.add(background);
-  }
-
-  /**
-   * Renders goal areas (6m and 9m zones) for both ends of the court
-   */
-  private renderGoalAreas(): void {
-    const width = this.config.widthM * this.config.pixelsPerMeter;
-    const height = this.config.heightM * this.config.pixelsPerMeter;
-    const centerX = width / 2;
-
-    // Top goal area (y = 0) - always render
-    this.renderSingleGoalArea(centerX, 0, false);
-
-    // Bottom goal area (y = height) - only render in full court mode
-    if (!this.config.halfCourt) {
-      this.renderSingleGoalArea(centerX, height, true);
-    }
-  }
-
-  /**
-   * Renders a single goal area (6m and 9m zones + goal line)
-   * @param centerX X coordinate of the goal center
-   * @param yPosition Y coordinate of the goal line
-   * @param isBottom Whether this is the bottom goal area
-   */
-  private renderSingleGoalArea(
-    centerX: number,
-    yPosition: number,
-    isBottom: boolean,
-  ): void {
-    // Create and render 6m zone (filled blue)
-    const zone6m = new HandballZone(
-      centerX,
-      yPosition,
-      6,
-      this.config,
-      isBottom,
-    );
-    const zone6mShape = zone6m.createShape(this.styles, true);
-    this.layer.add(zone6mShape);
-
-    // Create and render 9m zone (dashed line)
-    const zone9m = new HandballZone(
-      centerX,
-      yPosition,
-      9,
-      this.config,
-      isBottom,
-    );
-    const zone9mShape = zone9m.createShape(this.styles, false);
-    this.layer.add(zone9mShape);
-
-    // Render goal line
-    this.renderGoalLine(centerX, yPosition);
-  }
-
-  /**
-   * Renders the goal line (3m wide, centered)
-   */
-  private renderGoalLine(centerX: number, yPosition: number): void {
-    const halfGoalPx =
-      (this.config.goalWidthM / 2) * this.config.pixelsPerMeter;
-
-    const goalLine = new Konva.Line({
-      points: [
-        centerX - halfGoalPx,
-        yPosition,
-        centerX + halfGoalPx,
-        yPosition,
-      ],
-      stroke: this.styles.goalLineColor,
-      strokeWidth: this.styles.goalLineWidth,
-    });
-
-    this.layer.add(goalLine);
-  }
-
-  /**
-   * Renders center line and center circle
-   */
-  private renderCenterElements(): void {
-    // Skip center elements in half court mode
-    // In half court mode, the bottom border represents the center/medium line
-    if (this.config.halfCourt) {
-      return;
-    }
-
-    const width = this.config.widthM * this.config.pixelsPerMeter;
-    const height = this.config.heightM * this.config.pixelsPerMeter;
-
-    // Center line
-    const centerLine = new Konva.Line({
-      points: [0, height / 2, width, height / 2],
-      stroke: this.styles.borderColor,
-      strokeWidth: this.styles.borderWidth,
-    });
-    this.layer.add(centerLine);
-
-    // Center circle (radius = 3m in handball)
-    const centerCircleRadius = 3 * this.config.pixelsPerMeter;
-    const centerCircle = new Konva.Circle({
-      x: width / 2,
-      y: height / 2,
-      radius: centerCircleRadius,
-      stroke: this.styles.borderColor,
-      strokeWidth: this.styles.borderWidth,
-      fill: 'transparent',
-    });
-    this.layer.add(centerCircle);
-  }
-
-  /**
-   * Renders all entities on the court (players, ball, etc.)
-   */
-  private renderEntities(): void {
-    this.entities.forEach(({ entity }) => {
-      this.renderEntity(entity);
-    });
-  }
-
-  /**
-   * Renders a single entity using polymorphic createShape method
-   * Returns the created shape
-   */
-  private renderEntity(entity: CourtEntity): Konva.Group {
-    const shape = entity.createShape({
-      pixelsPerMeter: this.config.pixelsPerMeter,
-      showCoordinates: this.showCoordinates,
-    });
-
-    this.layer.add(shape);
-    return shape;
+    // Single draw for all entities added
+    this.layer.draw();
   }
 
   /**
    * Adds a new entity to the court
+   * Note: Batches rendering - only draws if batchDraw is false
    */
-  addEntity(entity: CourtEntity): void {
-    const shape = this.renderEntity(entity);
-    this.entities.set(entity.id, { entity, shape });
-    this.layer.draw();
+  addEntity(entity: CourtEntity, batchDraw: boolean = false): void {
+    this.entityRenderer.addAndRender(entity);
+    if (!batchDraw) {
+      this.layer.draw();
+    }
   }
 
   /**
    * Removes an entity from the court
    */
   removeEntity(entityId: string): void {
-    const entry = this.entities.get(entityId);
-    if (entry) {
-      entry.shape.destroy();
-      this.entities.delete(entityId);
+    const removed = this.entityManager.remove(entityId);
+    if (removed) {
       this.layer.draw();
     }
   }
@@ -283,63 +136,61 @@ export class HandballCourtRenderer {
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getEntities<T extends CourtEntity>(type: new (...args: any[]) => T): T[] {
-    const result: T[] = [];
-    this.entities.forEach(({ entity }) => {
-      if (entity instanceof type) {
-        result.push(entity as T);
-      }
-    });
-    return result;
+    return this.entityManager.getByType(type);
   }
 
   /**
    * Gets all current players
    */
   getPlayers(): Player[] {
-    return this.getEntities(Player);
+    return this.entityManager.getPlayers();
   }
 
   /**
    * Clears all entities from the court
    */
   clearEntities(): void {
-    this.entities.forEach(({ shape }) => shape.destroy());
-    this.entities.clear();
+    this.entityManager.clear();
     this.layer.draw();
   }
 
   /**
    * Sets whether to show entity coordinates
+   * Optimized to only redraw if changes were made
    */
   setShowCoordinates(show: boolean): void {
-    this.showCoordinates = show;
-    // Re-render all entities to update coordinate display
-    this.entities.forEach(({ entity, shape }) => {
-      shape.destroy();
-      const newShape = this.renderEntity(entity);
-      this.entities.set(entity.id, { entity, shape: newShape });
-    });
-    this.layer.draw();
+    const changed = this.entityRenderer.setShowCoordinates(show);
+    if (changed) {
+      this.layer.draw();
+    }
   }
 
   /**
    * Clears the court and re-renders with new configuration
    */
   refresh(config?: CourtConfig, styles?: CourtStyles): void {
-    if (config) this.config = config;
-    if (styles) this.styles = styles;
+    if (config) {
+      this.config = config;
+      this.courtRenderer.setConfig(config);
+      this.entityRenderer.setPixelsPerMeter(config.pixelsPerMeter);
+    }
+    if (styles) {
+      this.styles = styles;
+      this.courtRenderer.setStyles(styles);
+    }
 
     this.layer.destroyChildren();
-    this.entities.clear();
+    this.entityManager.clear();
     this.render();
   }
 
   /**
    * Adds the ball to the court at a specific position
    */
-  addBall(x?: number, y?: number): void {
-    // Remove existing ball first
-    this.removeBall();
+  addBall(x?: number, y?: number, batchDraw: boolean = false): void {
+    // Remove existing ball first (without redraw)
+    const balls = this.entityManager.getByType(Ball);
+    balls.forEach((ball) => this.entityManager.remove(ball.id));
 
     // Default position: center of the court
     const defaultX = (this.config.widthM * this.config.pixelsPerMeter) / 2;
@@ -351,14 +202,14 @@ export class HandballCourtRenderer {
       DEFAULT_BALL_STYLES,
     );
 
-    this.addEntity(ball);
+    this.addEntity(ball, batchDraw);
   }
 
   /**
    * Removes the ball from the court
    */
   removeBall(): void {
-    const balls = this.getEntities(Ball);
+    const balls = this.entityManager.getByType(Ball);
     balls.forEach((ball) => this.removeEntity(ball.id));
   }
 
@@ -366,15 +217,14 @@ export class HandballCourtRenderer {
    * Gets the current ball
    */
   getBall(): Ball | null {
-    const balls = this.getEntities(Ball);
-    return balls.length > 0 ? balls[0] : null;
+    return this.entityManager.getBall();
   }
 
   /**
    * Checks if the ball is currently on the court
    */
   hasBall(): boolean {
-    return this.getEntities(Ball).length > 0;
+    return this.entityManager.hasBall();
   }
 
   /**
@@ -382,55 +232,33 @@ export class HandballCourtRenderer {
    * Returns an array of objects with entity type and serialized state
    */
   saveEntitiesState(): Array<{ type: string; state: Record<string, unknown> }> {
-    const result: Array<{ type: string; state: Record<string, unknown> }> = [];
-    this.entities.forEach(({ entity }) => {
-      const type =
-        entity instanceof Player
-          ? 'player'
-          : entity instanceof Ball
-            ? 'ball'
-            : 'unknown';
-      result.push({
-        type,
-        state: entity.toState(this.config.pixelsPerMeter),
-      });
-    });
-    return result;
+    return this.statePersistence.saveState(this.config.pixelsPerMeter);
   }
 
   /**
    * Restores entities from saved state
+   * Optimized to batch all entity additions and draw once
    */
   restoreEntitiesState(
     savedState: Array<{ type: string; state: Record<string, unknown> }>,
     newPixelsPerMeter: number,
   ): void {
-    // Clear existing entities
-    this.entities.forEach(({ shape }) => shape.destroy());
-    this.entities.clear();
+    // Clear existing entities (no draw needed)
+    this.entityManager.clear();
 
-    // Restore each entity based on its type
-    savedState.forEach(({ type, state }) => {
-      let entity: CourtEntity;
+    // Restore entities
+    const restoredEntities = this.statePersistence.restoreState(
+      savedState,
+      newPixelsPerMeter,
+    );
 
-      switch (type) {
-        case 'player':
-          entity = Player.fromState(state, newPixelsPerMeter);
-          break;
-        case 'ball':
-          entity = Ball.fromState(state, newPixelsPerMeter);
-          break;
-        default:
-          console.warn(`Unknown entity type: ${type}`);
-          return;
-      }
-
-      // Add entity without triggering individual layer.draw()
-      const shape = this.renderEntity(entity);
-      this.entities.set(entity.id, { entity, shape });
+    // Batch render all entities without drawing
+    restoredEntities.forEach((entity) => {
+      const shape = this.entityRenderer.renderEntity(entity);
+      this.entityManager.add(entity, shape);
     });
 
-    // Draw all at once
+    // Single draw for all restored entities
     this.layer.draw();
   }
 
@@ -443,18 +271,20 @@ export class HandballCourtRenderer {
 
     // Update configuration
     this.config = newConfig;
+    this.courtRenderer.setConfig(newConfig);
+    this.entityRenderer.setPixelsPerMeter(newConfig.pixelsPerMeter);
+
     if (newStyles) {
       this.styles = newStyles;
+      this.courtRenderer.setStyles(newStyles);
     }
 
     // Clear the layer
     this.layer.destroyChildren();
-    this.entities.clear();
+    this.entityManager.clear();
 
     // Re-render court background
-    this.renderCourtBackground();
-    this.renderGoalAreas();
-    this.renderCenterElements();
+    this.courtRenderer.render();
 
     // Restore entities with new scale
     if (savedState.length > 0) {

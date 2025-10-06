@@ -149,14 +149,14 @@ export class Player extends CourtEntity {
     group.add(circle);
     group.add(text);
 
-    // Add coordinates text if enabled
-    if (config.showCoordinates) {
-      const coordsText = this.createCoordinatesText(
-        config.pixelsPerMeter,
-        this.styles.playerRadius + 5,
-      );
-      group.add(coordsText);
-    }
+    // Always create coordinates text, but set visibility based on config
+    const coordsText = this.createCoordinatesText(
+      config.pixelsPerMeter,
+      this.styles.playerRadius + 5,
+    );
+    coordsText.name('coordinates'); // Set name for easy selection
+    coordsText.visible(config.showCoordinates);
+    group.add(coordsText);
 
     // Setup drag handlers
     this.setupDragHandlers(group, config.pixelsPerMeter);
