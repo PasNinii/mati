@@ -1,7 +1,7 @@
 import { Type } from '@angular/core';
 import { BaseFilter } from './base-filter.model';
-import { BaseFilterComponent } from '../../../ui/filters/base-filter.component';
-import { MultiSelectFilterComponent } from '../../../ui/filters/multi-select-filter/multi-select-filter.component';
+import { BaseFilterComponent } from '../base-filter.component';
+import { MultiSelectFilterComponent } from '../components/multi-select-filter/multi-select-filter.component';
 
 /**
  * Array filter for multi-select inputs

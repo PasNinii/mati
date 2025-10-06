@@ -1,9 +1,9 @@
 import { Type } from '@angular/core';
 import { BaseFilter } from './base-filter.model';
-import { TextFilterComponent } from '../../../ui/filters/text-filter/text-filter.component';
-import { SelectFilterComponent } from '../../../ui/filters/select-filter/select-filter.component';
-import { NumberFilterComponent } from '../../../ui/filters/number-filter/number-filter.component';
-import { BaseFilterComponent } from '../../../ui/filters';
+import { TextFilterComponent } from '../components/text-filter/text-filter.component';
+import { SelectFilterComponent } from '../components/select-filter/select-filter.component';
+import { NumberFilterComponent } from '../components/number-filter/number-filter.component';
+import { BaseFilterComponent } from '../base-filter.component';
 
 /**
  * Base class for single value filters

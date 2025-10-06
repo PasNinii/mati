@@ -6,11 +6,11 @@ import {
   FilterGroup,
   FilterGroupStructure,
   FilterState,
-} from '../../pattern/filter/filter-config.interface';
-import { FilterType } from '../../pattern/filter/filter-type.enum';
-import { KeyboardShortcutService } from './keyboard-shortcut.service';
-import { BaseFilter } from '../../pattern/filter/models';
-import { createFilter } from '../../pattern/filter/models/filter.factory';
+} from './filter-config.interface';
+import { FilterType } from './filter-type.enum';
+import { KeyboardShortcutService } from '../../core/services/keyboard-shortcut.service';
+import { BaseFilter } from './models';
+import { createFilter } from './models/filter.factory';
 
 @Injectable({ providedIn: 'root' })
 export class FilterService {

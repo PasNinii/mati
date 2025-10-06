@@ -1,6 +1,6 @@
 import { signal, Signal, WritableSignal, Type } from '@angular/core';
 import { FilterConfig } from '../filter-config.interface';
-import { BaseFilterComponent } from '../../../ui/filters';
+import { BaseFilterComponent } from '../base-filter.component';
 
 /**
  * Abstract base class for all filter types

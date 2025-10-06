@@ -16,7 +16,7 @@ import {
   DEFAULT_COURT_STYLES,
 } from '../models/court-config.interface';
 import { HandballCourtRenderer } from './handball-court-renderer.service';
-import { FilterService } from '../../../core/services/filter.service';
+import { FilterService } from '../../../pattern/filter/filter.service';
 
 @Injectable()
 export class TacticalBoardStateService implements OnDestroy {

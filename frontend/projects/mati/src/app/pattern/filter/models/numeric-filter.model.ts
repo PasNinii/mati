@@ -1,7 +1,7 @@
 import { Type } from '@angular/core';
 import { BaseFilter } from './base-filter.model';
-import { BaseFilterComponent } from '../../../ui/filters/base-filter.component';
-import { SliderFilterComponent } from '../../../ui/filters/slider-filter/slider-filter.component';
+import { BaseFilterComponent } from '../base-filter.component';
+import { SliderFilterComponent } from '../components/slider-filter/slider-filter.component';
 
 /**
  * Numeric filter with increment/decrement support

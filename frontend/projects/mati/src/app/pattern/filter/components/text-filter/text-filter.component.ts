@@ -4,10 +4,10 @@ import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { FormsModule } from '@angular/forms';
-import { BaseFilterComponent } from '../../../pattern/filter/base-filter.component';
+import { BaseFilterComponent } from '../../base-filter.component';
 
 @Component({
-  selector: 'mati-number-filter',
+  selector: 'mati-text-filter',
   imports: [
     MatFormFieldModule,
     MatInputModule,
@@ -17,20 +17,18 @@ import { BaseFilterComponent } from '../../../pattern/filter/base-filter.compone
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <mat-form-field appearance="outline" class="number-filter">
+    <mat-form-field appearance="outline" class="text-filter">
       @if (filter().config().label) {
         <mat-label>{{ filter().config().label }}</mat-label>
       }
       <input
         matInput
-        type="number"
+        type="text"
         [ngModel]="filter().value()"
         (ngModelChange)="onValueChange($event)"
         [placeholder]="filter().config().placeholder || ''"
-        [attr.min]="filter().config().min"
-        [attr.max]="filter().config().max"
       />
-      @if (filter().config().clearable !== false && filter().value() !== null) {
+      @if (filter().config().clearable !== false && filter().value()) {
         <button
           matSuffix
           mat-icon-button
@@ -45,10 +43,10 @@ import { BaseFilterComponent } from '../../../pattern/filter/base-filter.compone
   `,
   styles: [
     `
-      .number-filter {
+      .text-filter {
         width: 100%;
       }
     `,
   ],
 })
-export class NumberFilterComponent extends BaseFilterComponent<number | null> {}
+export class TextFilterComponent extends BaseFilterComponent<string | null> {}

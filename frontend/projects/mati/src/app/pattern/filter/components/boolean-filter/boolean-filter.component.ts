@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { BaseFilterComponent } from '../../../pattern/filter/base-filter.component';
+import { BaseFilterComponent } from '../../base-filter.component';
 
 @Component({
   selector: 'mati-boolean-filter',

@@ -1,42 +1,46 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { FormsModule } from '@angular/forms';
-import { BaseFilterComponent } from '../../../pattern/filter/base-filter.component';
+import { BaseFilterComponent } from '../../base-filter.component';
 
 @Component({
-  selector: 'mati-number-filter',
+  selector: 'mati-multi-select-filter',
   imports: [
     MatFormFieldModule,
-    MatInputModule,
+    MatSelectModule,
     MatIconModule,
     MatButtonModule,
     FormsModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <mat-form-field appearance="outline" class="number-filter">
+    <mat-form-field appearance="outline" class="multi-select-filter">
       @if (filter().config().label) {
         <mat-label>{{ filter().config().label }}</mat-label>
       }
-      <input
-        matInput
-        type="number"
+      <mat-select
         [ngModel]="filter().value()"
         (ngModelChange)="onValueChange($event)"
-        [placeholder]="filter().config().placeholder || ''"
-        [attr.min]="filter().config().min"
-        [attr.max]="filter().config().max"
-      />
-      @if (filter().config().clearable !== false && filter().value() !== null) {
+        multiple
+      >
+        @for (option of filter().config().options || []; track option.value) {
+          <mat-option [value]="option.value">
+            {{ option.label }}
+          </mat-option>
+        }
+      </mat-select>
+      @if (
+        filter().config().clearable !== false && filter().value().length > 0
+      ) {
         <button
           matSuffix
           mat-icon-button
-          (click)="clear()"
+          (click)="clear(); $event.stopPropagation()"
           type="button"
-          aria-label="Clear"
+          aria-label="Clear all"
         >
           <mat-icon>close</mat-icon>
         </button>
@@ -45,10 +49,12 @@ import { BaseFilterComponent } from '../../../pattern/filter/base-filter.compone
   `,
   styles: [
     `
-      .number-filter {
+      .multi-select-filter {
         width: 100%;
       }
     `,
   ],
 })
-export class NumberFilterComponent extends BaseFilterComponent<number | null> {}
+export class MultiSelectFilterComponent extends BaseFilterComponent<
+  unknown[]
+> {}

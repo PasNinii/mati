@@ -2,7 +2,7 @@ import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { MatSliderModule } from '@angular/material/slider';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { FormsModule } from '@angular/forms';
-import { BaseFilterComponent } from '../../../pattern/filter/base-filter.component';
+import { BaseFilterComponent } from '../../base-filter.component';
 
 @Component({
   selector: 'mati-slider-filter',

@@ -4,7 +4,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { FormsModule } from '@angular/forms';
-import { BaseFilterComponent } from '../base-filter.component';
+import { BaseFilterComponent } from '../../../pattern/filter/base-filter.component';
 
 @Component({
   selector: 'mati-select-filter',

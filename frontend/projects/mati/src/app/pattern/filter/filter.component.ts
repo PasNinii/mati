@@ -12,8 +12,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatChipsModule } from '@angular/material/chips';
-import { FilterService } from '../../core/services/filter.service';
-import { FilterState } from '../../pattern/filter/filter-config.interface';
+import { FilterService } from './filter.service';
+import { FilterState } from './filter-config.interface';
 
 @Component({
   selector: 'mati-filter',

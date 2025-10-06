@@ -1,5 +1,5 @@
-// Export base filter component
-export * from './base-filter.component';
+// Export base filter component (moved to parent directory)
+export * from '../base-filter.component';
 
 // Export all filter UI components
 export * from './text-filter/text-filter.component';

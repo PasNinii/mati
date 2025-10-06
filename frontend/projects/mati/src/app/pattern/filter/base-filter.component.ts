@@ -1,5 +1,5 @@
 import { Directive, input } from '@angular/core';
-import { BaseFilter } from '../../pattern/filter/models';
+import { BaseFilter } from './models';
 
 /**
  * Abstract base class for all filter UI components

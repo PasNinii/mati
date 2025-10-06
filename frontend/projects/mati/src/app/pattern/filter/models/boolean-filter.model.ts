@@ -1,7 +1,7 @@
 import { Type } from '@angular/core';
 import { BaseFilter } from './base-filter.model';
-import { BaseFilterComponent } from '../../../ui/filters/base-filter.component';
-import { BooleanFilterComponent } from '../../../ui/filters/boolean-filter/boolean-filter.component';
+import { BaseFilterComponent } from '../base-filter.component';
+import { BooleanFilterComponent } from '../components/boolean-filter/boolean-filter.component';
 
 /**
  * Boolean filter for true/false toggles (checkboxes, slide toggles)
