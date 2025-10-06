@@ -135,18 +135,28 @@ export class TacticalBoardStateService implements OnDestroy {
       const config = this.buildCourtConfig();
       const styles = DEFAULT_COURT_STYLES;
 
-      this.courtRenderer = new HandballCourtRenderer(
-        this.layer(),
-        config,
-        styles,
-      );
+      // If renderer exists, reinitialize it to preserve entities
+      if (this.courtRenderer) {
+        this.courtRenderer.reinitialize(config, styles);
+        this.courtRenderer.setShowCoordinates(this.showCoordinates());
+      } else {
+        // First time initialization
+        this.courtRenderer = new HandballCourtRenderer(
+          this.layer(),
+          config,
+          styles,
+        );
 
-      // Set initial showCoordinates state
-      this.courtRenderer.setShowCoordinates(this.showCoordinates());
+        // Set initial showCoordinates state
+        this.courtRenderer.setShowCoordinates(this.showCoordinates());
 
-      // Initialize players by default
-      this.courtRenderer.initializeDefaultPlayers();
-      this.courtRenderer.render();
+        // Render court background
+        this.courtRenderer.render();
+
+        // Add default players
+        this.courtRenderer.initializeDefaultPlayers();
+      }
+
       this.updatePlayerCount();
     }
   }

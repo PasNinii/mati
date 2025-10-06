@@ -18,6 +18,14 @@ import { CourtEntity } from '../models/court-entity.model';
 export { DEFAULT_PLAYER_STYLES, PlayerStyles, DEFAULT_BALL_STYLES, BallStyles };
 
 /**
+ * Entity entry in the tracking map
+ */
+interface EntityEntry {
+  entity: CourtEntity;
+  shape: Konva.Group;
+}
+
+/**
  * Renders a complete handball court with all its elements:
  * - Court background and borders
  * - Goal areas (6m and 9m zones)
@@ -29,8 +37,7 @@ export class HandballCourtRenderer {
   private layer: Konva.Layer;
   private config: CourtConfig;
   private styles: CourtStyles;
-  private entities: CourtEntity[] = [];
-  private entityShapes: Map<string, Konva.Group> = new Map();
+  private entities: Map<string, EntityEntry> = new Map();
   private showCoordinates: boolean = false;
 
   constructor(layer: Konva.Layer, config: CourtConfig, styles: CourtStyles) {
@@ -231,30 +238,31 @@ export class HandballCourtRenderer {
    * Renders all entities on the court (players, ball, etc.)
    */
   private renderEntities(): void {
-    this.entities.forEach((entity) => {
+    this.entities.forEach(({ entity }) => {
       this.renderEntity(entity);
     });
   }
 
   /**
    * Renders a single entity using polymorphic createShape method
+   * Returns the created shape
    */
-  private renderEntity(entity: CourtEntity): void {
+  private renderEntity(entity: CourtEntity): Konva.Group {
     const shape = entity.createShape({
       pixelsPerMeter: this.config.pixelsPerMeter,
       showCoordinates: this.showCoordinates,
     });
 
-    this.entityShapes.set(entity.id, shape);
     this.layer.add(shape);
+    return shape;
   }
 
   /**
    * Adds a new entity to the court
    */
   addEntity(entity: CourtEntity): void {
-    this.entities.push(entity);
-    this.renderEntity(entity);
+    const shape = this.renderEntity(entity);
+    this.entities.set(entity.id, { entity, shape });
     this.layer.draw();
   }
 
@@ -262,15 +270,11 @@ export class HandballCourtRenderer {
    * Removes an entity from the court
    */
   removeEntity(entityId: string): void {
-    const entityIndex = this.entities.findIndex((e) => e.id === entityId);
-    if (entityIndex !== -1) {
-      this.entities.splice(entityIndex, 1);
-      const shape = this.entityShapes.get(entityId);
-      if (shape) {
-        shape.destroy();
-        this.entityShapes.delete(entityId);
-        this.layer.draw();
-      }
+    const entry = this.entities.get(entityId);
+    if (entry) {
+      entry.shape.destroy();
+      this.entities.delete(entityId);
+      this.layer.draw();
     }
   }
 
@@ -279,7 +283,13 @@ export class HandballCourtRenderer {
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getEntities<T extends CourtEntity>(type: new (...args: any[]) => T): T[] {
-    return this.entities.filter((e) => e instanceof type) as T[];
+    const result: T[] = [];
+    this.entities.forEach(({ entity }) => {
+      if (entity instanceof type) {
+        result.push(entity as T);
+      }
+    });
+    return result;
   }
 
   /**
@@ -293,9 +303,8 @@ export class HandballCourtRenderer {
    * Clears all entities from the court
    */
   clearEntities(): void {
-    this.entities = [];
-    this.entityShapes.forEach((shape) => shape.destroy());
-    this.entityShapes.clear();
+    this.entities.forEach(({ shape }) => shape.destroy());
+    this.entities.clear();
     this.layer.draw();
   }
 
@@ -305,9 +314,11 @@ export class HandballCourtRenderer {
   setShowCoordinates(show: boolean): void {
     this.showCoordinates = show;
     // Re-render all entities to update coordinate display
-    this.entityShapes.forEach((shape) => shape.destroy());
-    this.entityShapes.clear();
-    this.renderEntities();
+    this.entities.forEach(({ entity, shape }) => {
+      shape.destroy();
+      const newShape = this.renderEntity(entity);
+      this.entities.set(entity.id, { entity, shape: newShape });
+    });
     this.layer.draw();
   }
 
@@ -319,7 +330,7 @@ export class HandballCourtRenderer {
     if (styles) this.styles = styles;
 
     this.layer.destroyChildren();
-    this.entityShapes.clear();
+    this.entities.clear();
     this.render();
   }
 
@@ -364,5 +375,90 @@ export class HandballCourtRenderer {
    */
   hasBall(): boolean {
     return this.getEntities(Ball).length > 0;
+  }
+
+  /**
+   * Saves the current state of all entities (positions in meters)
+   * Returns an array of objects with entity type and serialized state
+   */
+  saveEntitiesState(): Array<{ type: string; state: Record<string, unknown> }> {
+    const result: Array<{ type: string; state: Record<string, unknown> }> = [];
+    this.entities.forEach(({ entity }) => {
+      const type =
+        entity instanceof Player
+          ? 'player'
+          : entity instanceof Ball
+            ? 'ball'
+            : 'unknown';
+      result.push({
+        type,
+        state: entity.toState(this.config.pixelsPerMeter),
+      });
+    });
+    return result;
+  }
+
+  /**
+   * Restores entities from saved state
+   */
+  restoreEntitiesState(
+    savedState: Array<{ type: string; state: Record<string, unknown> }>,
+    newPixelsPerMeter: number,
+  ): void {
+    // Clear existing entities
+    this.entities.forEach(({ shape }) => shape.destroy());
+    this.entities.clear();
+
+    // Restore each entity based on its type
+    savedState.forEach(({ type, state }) => {
+      let entity: CourtEntity;
+
+      switch (type) {
+        case 'player':
+          entity = Player.fromState(state, newPixelsPerMeter);
+          break;
+        case 'ball':
+          entity = Ball.fromState(state, newPixelsPerMeter);
+          break;
+        default:
+          console.warn(`Unknown entity type: ${type}`);
+          return;
+      }
+
+      // Add entity without triggering individual layer.draw()
+      const shape = this.renderEntity(entity);
+      this.entities.set(entity.id, { entity, shape });
+    });
+
+    // Draw all at once
+    this.layer.draw();
+  }
+
+  /**
+   * Reinitializes the court with a new configuration while preserving entities
+   */
+  reinitialize(newConfig: CourtConfig, newStyles?: CourtStyles): void {
+    // Save current entities state
+    const savedState = this.saveEntitiesState();
+
+    // Update configuration
+    this.config = newConfig;
+    if (newStyles) {
+      this.styles = newStyles;
+    }
+
+    // Clear the layer
+    this.layer.destroyChildren();
+    this.entities.clear();
+
+    // Re-render court background
+    this.renderCourtBackground();
+    this.renderGoalAreas();
+    this.renderCenterElements();
+
+    // Restore entities with new scale
+    if (savedState.length > 0) {
+      this.restoreEntitiesState(savedState, newConfig.pixelsPerMeter);
+    }
   }
 }

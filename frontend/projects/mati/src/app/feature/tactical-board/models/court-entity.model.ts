@@ -43,6 +43,33 @@ export abstract class CourtEntity {
   }
 
   /**
+   * Converts pixel coordinates to meters
+   */
+  toMeters(pixelsPerMeter: number): EntityCoordinates {
+    return {
+      x: this.coordinates.x / pixelsPerMeter,
+      y: this.coordinates.y / pixelsPerMeter,
+    };
+  }
+
+  /**
+   * Converts meter coordinates to pixels and updates entity position
+   */
+  fromMeters(meters: EntityCoordinates, pixelsPerMeter: number): void {
+    this.coordinates = {
+      x: meters.x * pixelsPerMeter,
+      y: meters.y * pixelsPerMeter,
+    };
+  }
+
+  /**
+   * Serializes the entity state to a plain object for preservation
+   * Positions are stored in meters for scale-independence
+   * Subclasses should override to include type-specific data
+   */
+  abstract toState(pixelsPerMeter: number): Record<string, unknown>;
+
+  /**
    * Creates and returns the Konva shape for this entity
    * Each subclass must implement how to render itself
    */
