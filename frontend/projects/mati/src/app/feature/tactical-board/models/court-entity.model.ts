@@ -124,7 +124,7 @@ export abstract class CourtEntity {
     group: Konva.Group,
     pixelsPerMeter: number,
   ): void {
-    const coordsText = group.findOne('.coords-text') as Konva.Text;
+    const coordsText = group.findOne('.coordinates') as Konva.Text;
     if (coordsText) {
       const xMeters = (this.coordinates.x / pixelsPerMeter).toFixed(1);
       const yMeters = (this.coordinates.y / pixelsPerMeter).toFixed(1);
@@ -143,7 +143,7 @@ export abstract class CourtEntity {
     const xMeters = (this.coordinates.x / pixelsPerMeter).toFixed(1);
     const yMeters = (this.coordinates.y / pixelsPerMeter).toFixed(1);
     const coordsText = new Konva.Text({
-      name: 'coords-text',
+      name: 'coordinates',
       text: `(${xMeters}m, ${yMeters}m)`,
       fontSize: 10,
       fill: '#000000',
@@ -164,19 +164,6 @@ export abstract class CourtEntity {
     group.on('dragmove', () => {
       this.updateCoordinates(group.x(), group.y());
       this.updateCoordinatesDisplay(group, pixelsPerMeter);
-      this.onDrag?.(this.coordinates);
     });
   }
-
-  /**
-   * Optional callback when entity is dragged
-   * Subclasses can override to add custom behavior
-   */
-  protected onDrag?(coordinates: EntityCoordinates): void;
-
-  /**
-   * Optional callback for custom actions
-   * Subclasses can implement this to handle interactions
-   */
-  abstract performAction?(actionType: string, ...args: unknown[]): void;
 }

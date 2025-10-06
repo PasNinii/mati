@@ -29,6 +29,7 @@ export { DEFAULT_PLAYER_STYLES, PlayerStyles, DEFAULT_BALL_STYLES, BallStyles };
 export class HandballCourtRenderer {
   private entityManager: EntityManager;
   private courtRenderer: CourtRenderer;
+  private showCoordinates: boolean = false;
 
   constructor(
     private layer: Konva.Layer,
@@ -45,18 +46,16 @@ export class HandballCourtRenderer {
    */
   render(): void {
     this.courtRenderer.render();
-    
+
     // Render all entities
     this.entityManager.getAll().forEach((entity) => {
       const shape = entity.createShape({
         pixelsPerMeter: this.config.pixelsPerMeter,
-        showCoordinates: false, // Default off
+        showCoordinates: this.showCoordinates,
       });
       this.layer.add(shape);
       this.entityManager.add(entity, shape);
     });
-    
-    this.layer.draw();
   }
 
   /**
@@ -69,57 +68,60 @@ export class HandballCourtRenderer {
 
     // Create home team attack players
     Object.entries(DEFAULT_ATTACK_POSITIONS).forEach(([position, coords]) => {
-      entities.push(new Player(
-        Team.HOME,
-        PlayerRole.ATTACK,
-        position as AttackPosition,
-        {
-          x: coords.xMeters * pixelsPerMeter,
-          y: coords.yMeters * pixelsPerMeter,
-        },
-        true,
-        DEFAULT_PLAYER_STYLES,
-      ));
+      entities.push(
+        new Player(
+          Team.HOME,
+          PlayerRole.ATTACK,
+          position as AttackPosition,
+          {
+            x: coords.xMeters * pixelsPerMeter,
+            y: coords.yMeters * pixelsPerMeter,
+          },
+          true,
+          DEFAULT_PLAYER_STYLES,
+        ),
+      );
     });
 
     // Create away team defense players
     DEFAULT_DEFENSE_POSITIONS.forEach((posData) => {
-      entities.push(new Player(
-        Team.AWAY,
-        PlayerRole.DEFENSE,
-        posData.position,
-        {
-          x: posData.xMeters * pixelsPerMeter,
-          y: posData.yMeters * pixelsPerMeter,
-        },
-        true,
-        DEFAULT_PLAYER_STYLES,
-      ));
+      entities.push(
+        new Player(
+          Team.AWAY,
+          PlayerRole.DEFENSE,
+          posData.position,
+          {
+            x: posData.xMeters * pixelsPerMeter,
+            y: posData.yMeters * pixelsPerMeter,
+          },
+          true,
+          DEFAULT_PLAYER_STYLES,
+        ),
+      );
     });
 
     // Create ball at CB position
     const cbPosition = DEFAULT_ATTACK_POSITIONS[AttackPosition.CB];
-    entities.push(new Ball(
-      {
-        x: cbPosition.xMeters * pixelsPerMeter,
-        y: cbPosition.yMeters * pixelsPerMeter,
-      },
-      true,
-      DEFAULT_BALL_STYLES,
-    ));
+    entities.push(
+      new Ball(
+        {
+          x: cbPosition.xMeters * pixelsPerMeter,
+          y: cbPosition.yMeters * pixelsPerMeter,
+        },
+        true,
+        DEFAULT_BALL_STYLES,
+      ),
+    );
 
     // Batch add all entities
-    entities.forEach(entity => {
+    entities.forEach((entity) => {
       const shape = entity.createShape({
         pixelsPerMeter: this.config.pixelsPerMeter,
-        showCoordinates: false,
+        showCoordinates: this.showCoordinates,
       });
       this.layer.add(shape);
       this.entityManager.add(entity, shape);
     });
-    
-    // Single draw for everything
-    this.layer.draw();
   }
 
   /**
@@ -128,7 +130,7 @@ export class HandballCourtRenderer {
   addEntity(entity: CourtEntity): void {
     const shape = entity.createShape({
       pixelsPerMeter: this.config.pixelsPerMeter,
-      showCoordinates: false, // Will be updated if needed
+      showCoordinates: this.showCoordinates,
     });
     this.layer.add(shape);
     this.entityManager.add(entity, shape);
@@ -155,14 +157,21 @@ export class HandballCourtRenderer {
    * Returns true if any changes were made
    */
   setShowCoordinates(show: boolean): boolean {
+    if (this.showCoordinates === show) {
+      return false; // No change needed
+    }
+
+    this.showCoordinates = show;
     let changed = false;
+
     this.entityManager.getAll().forEach((entity) => {
       if (entity.setCoordinatesVisible(show)) {
         changed = true;
       }
     });
+
     return changed;
-  }  /**
+  } /**
    * Adds the ball to the court at a specific position
    */
   addBall(x?: number, y?: number): void {
@@ -220,7 +229,9 @@ export class HandballCourtRenderer {
     }
 
     // Only destroy and redraw court background (not entities!)
-    this.layer.find('.court-background, .court-goal-area, .court-center').forEach(node => node.destroy());
+    this.layer
+      .find('.court-background, .court-goal-area, .court-center')
+      .forEach((node) => node.destroy());
     this.courtRenderer.render();
 
     // Scale entity positions in place using Konva's update methods
@@ -228,15 +239,12 @@ export class HandballCourtRenderer {
       // Update position directly on shape (Konva handles the visual update)
       shape.x(shape.x() * scaleFactor);
       shape.y(shape.y() * scaleFactor);
-      
+
       // Sync entity's internal coordinates
       entity.updateCoordinates(shape.x(), shape.y());
-      
+
       // Update coordinate text display (if visible)
       entity.updateCoordinateText(newPixelsPerMeter);
     });
-
-    // Single redraw for everything
-    this.layer.draw();
   }
 }

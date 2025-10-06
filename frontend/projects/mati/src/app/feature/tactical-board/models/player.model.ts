@@ -154,7 +154,6 @@ export class Player extends CourtEntity {
       config.pixelsPerMeter,
       this.styles.playerRadius + 5,
     );
-    coordsText.name('coordinates'); // Set name for easy selection
     coordsText.visible(config.showCoordinates);
     group.add(coordsText);
 
@@ -162,35 +161,6 @@ export class Player extends CourtEntity {
     this.setupDragHandlers(group, config.pixelsPerMeter);
 
     return group;
-  }
-
-  /**
-   * Perform actions on the player (e.g., pass, shoot, move to position)
-   */
-  performAction(actionType: string, ...args: unknown[]): void {
-    switch (actionType) {
-      case 'pass':
-        // Could animate a pass to another player
-        console.log(`${this.getLabel()} passes to`, args[0]);
-        break;
-      case 'shoot':
-        // Could animate a shot
-        console.log(`${this.getLabel()} shoots`);
-        break;
-      case 'moveTo': {
-        // Could animate movement to a position
-        const [x, y] = args as [number, number];
-        console.log(`${this.getLabel()} moves to (${x}, ${y})`);
-        this.updateCoordinates(x, y);
-        break;
-      }
-      case 'highlight':
-        // Could highlight the player temporarily
-        console.log(`${this.getLabel()} highlighted`);
-        break;
-      default:
-        console.warn(`Unknown action type: ${actionType}`);
-    }
   }
 
   /**

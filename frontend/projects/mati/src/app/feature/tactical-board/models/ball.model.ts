@@ -61,7 +61,6 @@ export class Ball extends CourtEntity {
       config.pixelsPerMeter,
       this.styles.ballRadius + 5,
     );
-    coordsText.name('coordinates'); // Set name for easy selection
     coordsText.visible(config.showCoordinates);
     group.add(coordsText);
 
@@ -69,28 +68,6 @@ export class Ball extends CourtEntity {
     this.setupDragHandlers(group, config.pixelsPerMeter);
 
     return group;
-  }
-
-  /**
-   * Perform actions on the ball (e.g., pass, shoot, etc.)
-   */
-  performAction(actionType: string, ...args: unknown[]): void {
-    switch (actionType) {
-      case 'pass':
-        // Could animate a pass to another player
-        console.log('Ball passed to', args[0]);
-        break;
-      case 'shoot':
-        // Could animate a shot towards goal
-        console.log('Ball shot towards goal');
-        break;
-      case 'highlight':
-        // Could highlight the ball temporarily
-        console.log('Ball highlighted');
-        break;
-      default:
-        console.warn(`Unknown action type: ${actionType}`);
-    }
   }
 
   /**
