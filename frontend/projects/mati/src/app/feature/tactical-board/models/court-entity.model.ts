@@ -109,6 +109,15 @@ export abstract class CourtEntity {
   }
 
   /**
+   * Updates the coordinate text display with current position
+   * Call this after scaling or moving the entity
+   */
+  updateCoordinateText(pixelsPerMeter: number): void {
+    if (!this.shape) return;
+    this.updateCoordinatesDisplay(this.shape, pixelsPerMeter);
+  }
+
+  /**
    * Updates the coordinates display if shown
    */
   protected updateCoordinatesDisplay(

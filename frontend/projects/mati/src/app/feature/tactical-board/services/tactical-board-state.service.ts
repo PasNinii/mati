@@ -102,7 +102,10 @@ export class TacticalBoardStateService implements OnDestroy {
       const showCoords = this.showCoordinates();
       untracked(() => {
         if (this.isInitialized()) {
-          this.courtRenderer.setShowCoordinates(showCoords);
+          const changed = this.courtRenderer.setShowCoordinates(showCoords);
+          if (changed) {
+            this.layer().draw();
+          }
         }
       });
     });
@@ -197,11 +200,19 @@ export class TacticalBoardStateService implements OnDestroy {
    */
   private syncBallVisibility(shouldShow: boolean): void {
     const hasBall = this.courtRenderer.hasBall();
+    let changed = false;
 
     if (shouldShow && !hasBall) {
       this.courtRenderer.addBall();
+      changed = true;
     } else if (!shouldShow && hasBall) {
       this.courtRenderer.removeBall();
+      changed = true;
+    }
+
+    // Only redraw if something changed
+    if (changed) {
+      this.layer().draw();
     }
   }
 

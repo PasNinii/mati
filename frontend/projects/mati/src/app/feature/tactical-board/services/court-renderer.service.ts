@@ -48,6 +48,7 @@ export class CourtRenderer {
     const height = this.config.heightM * this.config.pixelsPerMeter;
 
     const background = new Konva.Rect({
+      name: 'court-background',
       x: 0,
       y: 0,
       width,
@@ -97,6 +98,7 @@ export class CourtRenderer {
       isBottom,
     );
     const zone6mShape = zone6m.createShape(this.styles, true);
+    zone6mShape.name('court-goal-area');
     this.layer.add(zone6mShape);
 
     // Create and render 9m zone (dashed line)
@@ -108,6 +110,7 @@ export class CourtRenderer {
       isBottom,
     );
     const zone9mShape = zone9m.createShape(this.styles, false);
+    zone9mShape.name('court-goal-area');
     this.layer.add(zone9mShape);
 
     // Render goal line
@@ -122,6 +125,7 @@ export class CourtRenderer {
       (this.config.goalWidthM / 2) * this.config.pixelsPerMeter;
 
     const goalLine = new Konva.Line({
+      name: 'court-goal-area',
       points: [
         centerX - halfGoalPx,
         yPosition,
@@ -150,6 +154,7 @@ export class CourtRenderer {
 
     // Center line
     const centerLine = new Konva.Line({
+      name: 'court-center',
       points: [0, height / 2, width, height / 2],
       stroke: this.styles.borderColor,
       strokeWidth: this.styles.borderWidth,
@@ -159,6 +164,7 @@ export class CourtRenderer {
     // Center circle (radius = 3m in handball)
     const centerCircleRadius = 3 * this.config.pixelsPerMeter;
     const centerCircle = new Konva.Circle({
+      name: 'court-center',
       x: width / 2,
       y: height / 2,
       radius: centerCircleRadius,
