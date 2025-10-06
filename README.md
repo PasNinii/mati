@@ -24,8 +24,6 @@ This project is also meant to play with latest angular features and best practic
 
 ## Known Issues
 
-- Filter activation incorrectly resets player positions
-
 ## Planned Features & Improvements
 
 ### Shape System Refactoring
