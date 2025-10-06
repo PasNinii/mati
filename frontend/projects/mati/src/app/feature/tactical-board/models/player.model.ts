@@ -93,7 +93,7 @@ export class Player extends MovingEntity {
   /**
    * Get the display label for the player
    */
-  getLabel(): string {
+  private getLabel(): string {
     return this.position.toString();
   }
 
@@ -163,7 +163,6 @@ export class Player extends MovingEntity {
 
     return group;
   }
-
 }
 
 /**

@@ -126,7 +126,7 @@ export class HandballCourtRenderer {
   /**
    * Adds a new entity to the court
    */
-  addEntity(entity: Player | Ball): void {
+  private addEntity(entity: Player | Ball): void {
     const shape = entity.createShape({
       pixelsPerMeter: this.config.pixelsPerMeter,
       showCoordinates: this.showCoordinates,
@@ -134,14 +134,6 @@ export class HandballCourtRenderer {
     this.layer.add(shape);
     this.entityManager.add(entity, shape);
     // Note: Caller responsible for layer.draw() to allow batching
-  }
-
-  /**
-   * Removes an entity from the court
-   */
-  removeEntity(entityId: string): void {
-    this.entityManager.remove(entityId);
-    // Note: Caller responsible for layer.draw()
   }
 
   /**
@@ -168,7 +160,7 @@ export class HandballCourtRenderer {
   addBall(x?: number, y?: number): void {
     // Remove existing ball first (without redraw)
     const balls = this.entityManager.getByType(Ball);
-    balls.forEach((ball) => this.entityManager.remove(ball.id));
+    balls.forEach((ball) => this.entityManager.remove(ball));
 
     // Default position: center of the court
     const defaultX = (this.config.widthM * this.config.pixelsPerMeter) / 2;
@@ -189,7 +181,7 @@ export class HandballCourtRenderer {
    */
   removeBall(): void {
     const balls = this.entityManager.getByType(Ball);
-    balls.forEach((ball) => this.entityManager.remove(ball.id));
+    balls.forEach((ball) => this.entityManager.remove(ball));
     // Note: Caller responsible for layer.draw()
   }
 
@@ -221,7 +213,7 @@ export class HandballCourtRenderer {
 
     // Update ALL entities using their updateShape method
     // This is the unified approach: zones, lines, circles, players, ball all update consistently
-    this.entityManager.getAllEntries().forEach(({ entity }) => {
+    this.entityManager.getAll().forEach((entity) => {
       // Update config/styles for static entities
       if (entity instanceof StaticEntity) {
         entity.setConfig(newConfig);

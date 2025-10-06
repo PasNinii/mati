@@ -4,14 +4,6 @@ import { Player } from '../models/player.model';
 import { Ball } from '../models/ball.model';
 
 /**
- * Entity entry in the tracking map
- */
-interface EntityEntry {
-  entity: Entity;
-  shape: Konva.Group | Konva.Shape;
-}
-
-/**
  * Manages the lifecycle of entities on the tactical board
  * Responsibilities:
  * - Add/remove entities
@@ -20,41 +12,29 @@ interface EntityEntry {
  * - Clear all entities
  */
 export class EntityManager {
-  private entities: Map<string, EntityEntry> = new Map();
+  private entities: Map<string, Entity> = new Map();
 
   /**
    * Adds a new entity with its rendered shape
    */
   add(entity: Entity, shape: Konva.Group | Konva.Shape): void {
-    entity.setShape(shape); // Link shape to entity
-    this.entities.set(entity.id, { entity, shape });
+    entity.setShape(shape);
+    this.entities.set(entity.id, entity);
   }
 
   /**
-   * Removes an entity by ID
-   * Returns true if entity was found and removed
+   * Removes an entity from the layer
    */
-  remove(entityId: string): boolean {
-    const entry = this.entities.get(entityId);
-    if (entry) {
-      entry.shape.destroy();
-      this.entities.delete(entityId);
-      return true;
+  remove(entity: Entity): void {
+    if (this.entities.delete(entity.id)) {
+      entity.destroy();
     }
-    return false;
   }
 
   /**
    * Gets all entities
    */
   getAll(): Entity[] {
-    return Array.from(this.entities.values()).map((entry) => entry.entity);
-  }
-
-  /**
-   * Gets all entity entries (entity + shape pairs)
-   */
-  getAllEntries(): EntityEntry[] {
     return Array.from(this.entities.values());
   }
 
@@ -64,7 +44,7 @@ export class EntityManager {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getByType<T extends Entity>(type: new (...args: any[]) => T): T[] {
     const result: T[] = [];
-    this.entities.forEach(({ entity }) => {
+    this.entities.forEach((entity) => {
       if (entity instanceof type) {
         result.push(entity as T);
       }
@@ -90,7 +70,7 @@ export class EntityManager {
    * Clears all entities and destroys their shapes
    */
   clear(): void {
-    this.entities.forEach(({ shape }) => shape.destroy());
+    this.entities.forEach((entity) => entity.destroy());
     this.entities.clear();
   }
 }

@@ -32,17 +32,9 @@ export abstract class MovingEntity extends Entity {
   }
 
   /**
-   * Updates the coordinate text display with current position
-   */
-  updateCoordinateText(pixelsPerMeter: number): void {
-    if (!this.shape) return;
-    this.updateCoordinatesDisplay(pixelsPerMeter);
-  }
-
-  /**
    * Updates the coordinates display if shown
    */
-  protected updateCoordinatesDisplay(pixelsPerMeter: number): void {
+  private updateCoordinatesDisplay(pixelsPerMeter: number): void {
     if (!(this.shape instanceof Konva.Group)) return;
     const coordsText = this.shape.findOne('.coordinates') as Konva.Text;
     if (coordsText) {
@@ -104,6 +96,6 @@ export abstract class MovingEntity extends Entity {
     this.updateCoordinates(this.shape.x(), this.shape.y());
 
     // Update coordinate text
-    this.updateCoordinateText(pixelsPerMeter);
+    this.updateCoordinatesDisplay(pixelsPerMeter);
   }
 }

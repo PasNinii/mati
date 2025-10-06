@@ -70,5 +70,4 @@ export class Ball extends MovingEntity {
 
     return group;
   }
-
 }

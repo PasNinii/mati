@@ -55,4 +55,11 @@ export abstract class Entity {
   setShape(shape: Konva.Group | Konva.Shape): void {
     this.shape = shape;
   }
+
+  /**
+   * Destroys the Konva shape
+   */
+  destroy(): void {
+    this.shape?.destroy();
+  }
 }
