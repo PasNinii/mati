@@ -1,5 +1,6 @@
 import Konva from 'konva';
-import { CourtEntity, EntityCoordinates } from './court-entity.model';
+import { MovingEntity } from './moving-entity.model';
+import { EntityCoordinates } from './entity.model';
 
 /**
  * Player position types for handball
@@ -67,7 +68,7 @@ export const DEFAULT_PLAYER_STYLES: PlayerStyles = {
 /**
  * Player class representing a handball player on the tactical board
  */
-export class Player extends CourtEntity {
+export class Player extends MovingEntity {
   team: Team;
   role: PlayerRole;
   position: PlayerPosition;

@@ -1,7 +1,9 @@
 import {
   afterRenderEffect,
+  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
+  effect,
   ElementRef,
   inject,
   viewChild,
@@ -54,7 +56,7 @@ import { TacticalBoardStateService } from './services';
     </mat-drawer-container>
   `,
 })
-export class TacticalBoardComponent {
+export class TacticalBoardComponent implements AfterViewInit {
   private readonly keyboardShortcutService = inject(KeyboardShortcutService);
   protected readonly stateService = inject(TacticalBoardStateService);
 
@@ -62,21 +64,18 @@ export class TacticalBoardComponent {
     viewChild.required<ElementRef<HTMLDivElement>>('konvaContainer');
   private readonly drawerRef = viewChild.required<MatDrawer>('drawer');
 
-  // Expose drawer for template
   protected get drawer(): MatDrawer {
     return this.drawerRef();
   }
 
   constructor() {
-    // Register keyboard shortcut to toggle drawer (Ctrl+D)
     this.keyboardShortcutService.register('ctrl+d', () => {
       this.toggleDrawer();
     });
+  }
 
-    // Initialize Konva container after view is ready
-    afterRenderEffect(() => {
-      this.stateService.setKonvaContainer(this.konvaContainer());
-    });
+  ngAfterViewInit(): void {
+    this.stateService.setKonvaContainer(this.konvaContainer());
   }
 
   protected toggleDrawer(): void {

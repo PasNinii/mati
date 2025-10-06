@@ -1,5 +1,5 @@
 import Konva from 'konva';
-import { CourtEntity } from '../models/court-entity.model';
+import { Entity } from '../models/entity.model';
 import { Player } from '../models/player.model';
 import { Ball } from '../models/ball.model';
 
@@ -7,8 +7,8 @@ import { Ball } from '../models/ball.model';
  * Entity entry in the tracking map
  */
 interface EntityEntry {
-  entity: CourtEntity;
-  shape: Konva.Group;
+  entity: Entity;
+  shape: Konva.Group | Konva.Shape;
 }
 
 /**
@@ -25,7 +25,7 @@ export class EntityManager {
   /**
    * Adds a new entity with its rendered shape
    */
-  add(entity: CourtEntity, shape: Konva.Group): void {
+  add(entity: Entity, shape: Konva.Group | Konva.Shape): void {
     entity.setShape(shape); // Link shape to entity
     this.entities.set(entity.id, { entity, shape });
   }
@@ -47,21 +47,21 @@ export class EntityManager {
   /**
    * Gets an entity by ID
    */
-  get(entityId: string): CourtEntity | undefined {
+  get(entityId: string): Entity | undefined {
     return this.entities.get(entityId)?.entity;
   }
 
   /**
    * Gets the shape associated with an entity
    */
-  getShape(entityId: string): Konva.Group | undefined {
+  getShape(entityId: string): Konva.Group | Konva.Shape | undefined {
     return this.entities.get(entityId)?.shape;
   }
 
   /**
    * Gets all entities
    */
-  getAll(): CourtEntity[] {
+  getAll(): Entity[] {
     return Array.from(this.entities.values()).map((entry) => entry.entity);
   }
 
@@ -76,7 +76,7 @@ export class EntityManager {
    * Gets all entities of a specific type
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getByType<T extends CourtEntity>(type: new (...args: any[]) => T): T[] {
+  getByType<T extends Entity>(type: new (...args: any[]) => T): T[] {
     const result: T[] = [];
     this.entities.forEach(({ entity }) => {
       if (entity instanceof type) {

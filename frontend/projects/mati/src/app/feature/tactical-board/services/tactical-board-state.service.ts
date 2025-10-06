@@ -74,7 +74,6 @@ export class TacticalBoardStateService implements OnDestroy {
   public stage(): Konva.Stage | null {
     return this._stage ?? null;
   }
-
   constructor() {
     this.setupEffects();
   }
@@ -117,10 +116,6 @@ export class TacticalBoardStateService implements OnDestroy {
       });
     });
   }
-
-  /**
-   * Checks if the service is fully initialized
-   */
   private isInitialized(): boolean {
     return !!this.konvaContainer && !!this.courtRenderer;
   }
@@ -186,7 +181,7 @@ export class TacticalBoardStateService implements OnDestroy {
     this._stage.width(newWidth);
     this._stage.height(newHeight);
 
-    // Reinitialize court renderer with new config (preserves entity positions)
+    // Rebuild config and reinitialize all entities
     const config = this.buildCourtConfig();
     this.courtRenderer.reinitialize(config, DEFAULT_COURT_STYLES);
     this.courtRenderer.setShowCoordinates(this.showCoordinates());

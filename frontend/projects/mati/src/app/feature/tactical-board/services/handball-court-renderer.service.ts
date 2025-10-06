@@ -11,7 +11,8 @@ import {
   PlayerStyles,
 } from '../models/player.model';
 import { Ball, DEFAULT_BALL_STYLES, BallStyles } from '../models/ball.model';
-import { CourtEntity } from '../models/court-entity.model';
+import { MovingEntity } from '../models/moving-entity.model';
+import { StaticEntity } from '../models/static-entity.model';
 import { EntityManager } from './entity-manager.service';
 import { CourtRenderer } from './court-renderer.service';
 
@@ -37,18 +38,27 @@ export class HandballCourtRenderer {
     private styles: CourtStyles,
   ) {
     this.entityManager = new EntityManager();
-    this.courtRenderer = new CourtRenderer(layer, config, styles);
+    this.courtRenderer = new CourtRenderer(config, styles);
   }
 
   /**
    * Renders the complete handball court (court + all entities)
-   * Single draw at the end
+   * Creates and adds all static court entities + moving entities
    */
   render(): void {
-    this.courtRenderer.render();
+    // Create and add static court entities (background, zones, lines, circles)
+    const courtEntities = this.courtRenderer.createCourtEntities();
+    courtEntities.forEach((entity) => {
+      const shape = entity.createShape({ pixelsPerMeter: this.config.pixelsPerMeter });
+      this.layer.add(shape);
+      this.entityManager.add(entity, shape);
+    });
 
-    // Render all entities
+    // Render any existing moving entities (players, ball)
     this.entityManager.getAll().forEach((entity) => {
+      // Skip static entities that were just added
+      if (entity.getShape()) return;
+
       const shape = entity.createShape({
         pixelsPerMeter: this.config.pixelsPerMeter,
         showCoordinates: this.showCoordinates,
@@ -64,7 +74,7 @@ export class HandballCourtRenderer {
    */
   initializeDefaultPlayers(): void {
     const pixelsPerMeter = this.config.pixelsPerMeter;
-    const entities: CourtEntity[] = [];
+    const entities: (Player | Ball)[] = [];
 
     // Create home team attack players
     Object.entries(DEFAULT_ATTACK_POSITIONS).forEach(([position, coords]) => {
@@ -127,7 +137,7 @@ export class HandballCourtRenderer {
   /**
    * Adds a new entity to the court
    */
-  addEntity(entity: CourtEntity): void {
+  addEntity(entity: Player | Ball): void {
     const shape = entity.createShape({
       pixelsPerMeter: this.config.pixelsPerMeter,
       showCoordinates: this.showCoordinates,
@@ -154,24 +164,16 @@ export class HandballCourtRenderer {
 
   /**
    * Sets whether to show entity coordinates
-   * Returns true if any changes were made
    */
-  setShowCoordinates(show: boolean): boolean {
-    if (this.showCoordinates === show) {
-      return false; // No change needed
-    }
-
+  setShowCoordinates(show: boolean): void {
     this.showCoordinates = show;
-    let changed = false;
-
     this.entityManager.getAll().forEach((entity) => {
-      if (entity.setCoordinatesVisible(show)) {
-        changed = true;
+      if (entity instanceof MovingEntity) {
+        entity.setCoordinatesVisible(show);
       }
     });
-
-    return changed;
-  } /**
+  }
+  /**
    * Adds the ball to the court at a specific position
    */
   addBall(x?: number, y?: number): void {
@@ -210,9 +212,9 @@ export class HandballCourtRenderer {
   }
 
   /**
-   * Reinitializes the court with a new configuration while preserving entities
-   * Optimized: Only redraws court background and scales entities in place
-   * NO entity destruction or recreation - just position updates!
+   * Reinitializes the court with a new configuration
+   * Uses the unified entity system: all entities (static and moving) update themselves
+   * NO shape destruction or recreation - just geometric updates!
    */
   reinitialize(newConfig: CourtConfig, newStyles?: CourtStyles): void {
     const oldPixelsPerMeter = this.config.pixelsPerMeter;
@@ -228,23 +230,21 @@ export class HandballCourtRenderer {
       this.courtRenderer.setStyles(newStyles);
     }
 
-    // Only destroy and redraw court background (not entities!)
-    this.layer
-      .find('.court-background, .court-goal-area, .court-center')
-      .forEach((node) => node.destroy());
-    this.courtRenderer.render();
-
-    // Scale entity positions in place using Konva's update methods
-    this.entityManager.getAllEntries().forEach(({ entity, shape }) => {
-      // Update position directly on shape (Konva handles the visual update)
-      shape.x(shape.x() * scaleFactor);
-      shape.y(shape.y() * scaleFactor);
-
-      // Sync entity's internal coordinates
-      entity.updateCoordinates(shape.x(), shape.y());
-
-      // Update coordinate text display (if visible)
-      entity.updateCoordinateText(newPixelsPerMeter);
+    // Update ALL entities using their updateShape method
+    // This is the unified approach: zones, lines, circles, players, ball all update consistently
+    this.entityManager.getAllEntries().forEach(({ entity }) => {
+      // Update config/styles for static entities
+      if (entity instanceof StaticEntity) {
+        entity.setConfig(newConfig);
+        if (newStyles) {
+          entity.setStyles(newStyles);
+        }
+      }
+      
+      // Update shape geometry
+      entity.updateShape(newPixelsPerMeter, scaleFactor);
     });
   }
 }
+
+

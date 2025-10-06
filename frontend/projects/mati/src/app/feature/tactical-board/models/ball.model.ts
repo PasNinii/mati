@@ -1,5 +1,6 @@
 import Konva from 'konva';
-import { CourtEntity, EntityCoordinates } from './court-entity.model';
+import { MovingEntity } from './moving-entity.model';
+import { EntityCoordinates } from './entity.model';
 
 /**
  * Ball styling configuration
@@ -21,7 +22,7 @@ export const DEFAULT_BALL_STYLES: BallStyles = {
 /**
  * Ball class representing a handball on the tactical board
  */
-export class Ball extends CourtEntity {
+export class Ball extends MovingEntity {
   private styles: BallStyles;
 
   constructor(

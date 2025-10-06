@@ -1,18 +1,21 @@
-import Konva from 'konva';
 import { CourtConfig, CourtStyles } from '../models/court-config.interface';
-import { HandballZone } from '../models/handball-zone';
+import {
+  BackgroundEntity,
+  ZoneEntity,
+  LineEntity,
+  CircleEntity,
+} from '../models/court-shapes.model';
+import { StaticEntity } from '../models/static-entity.model';
 
 /**
- * Renders the handball court background and markings
+ * Renders the handball court background and markings using StaticEntity system
  * Responsibilities:
- * - Render court background and borders
- * - Render goal areas (6m and 9m zones)
- * - Render goal lines
- * - Render center line and circle (full court mode)
+ * - Create StaticEntity instances for all court elements
+ * - Return entities to be added to EntityManager
+ * - No direct Konva shape management!
  */
 export class CourtRenderer {
   constructor(
-    private layer: Konva.Layer,
     private config: CourtConfig,
     private styles: CourtStyles,
   ) {}
@@ -32,146 +35,142 @@ export class CourtRenderer {
   }
 
   /**
-   * Renders the complete handball court
+   * Creates all court static entities (background, zones, lines, circles)
+   * @returns Array of StaticEntity instances to be added to EntityManager
    */
-  render(): void {
-    this.renderCourtBackground();
-    this.renderGoalAreas();
-    this.renderCenterElements();
+  createCourtEntities(): StaticEntity[] {
+    const entities: StaticEntity[] = [];
+
+    // Background
+    entities.push(new BackgroundEntity(this.config, this.styles));
+
+    // Goal areas (zones + goal lines)
+    entities.push(...this.createGoalAreaEntities());
+
+    // Center elements (line + circle for full court)
+    entities.push(...this.createCenterEntities());
+
+    return entities;
   }
 
   /**
-   * Renders the court background and border
+   * Creates goal area entities (zones + goal lines) for both ends of the court
    */
-  private renderCourtBackground(): void {
-    const width = this.config.widthM * this.config.pixelsPerMeter;
-    const height = this.config.heightM * this.config.pixelsPerMeter;
-
-    const background = new Konva.Rect({
-      name: 'court-background',
-      x: 0,
-      y: 0,
-      width,
-      height,
-      fill: this.styles.courtColor,
-      stroke: this.styles.borderColor,
-      strokeWidth: this.styles.borderWidth,
-    });
-
-    this.layer.add(background);
-  }
-
-  /**
-   * Renders goal areas (6m and 9m zones) for both ends of the court
-   */
-  private renderGoalAreas(): void {
+  private createGoalAreaEntities(): StaticEntity[] {
+    const entities: StaticEntity[] = [];
     const width = this.config.widthM * this.config.pixelsPerMeter;
     const height = this.config.heightM * this.config.pixelsPerMeter;
     const centerX = width / 2;
 
     // Top goal area (y = 0) - always render
-    this.renderSingleGoalArea(centerX, 0, false);
+    entities.push(...this.createSingleGoalArea(centerX, 0, false));
 
     // Bottom goal area (y = height) - only render in full court mode
     if (!this.config.halfCourt) {
-      this.renderSingleGoalArea(centerX, height, true);
+      entities.push(...this.createSingleGoalArea(centerX, height, true));
     }
+
+    return entities;
   }
 
   /**
-   * Renders a single goal area (6m and 9m zones + goal line)
-   * @param centerX X coordinate of the goal center
-   * @param yPosition Y coordinate of the goal line
-   * @param isBottom Whether this is the bottom goal area
+   * Creates a single goal area (6m and 9m zones + goal line)
    */
-  private renderSingleGoalArea(
+  private createSingleGoalArea(
     centerX: number,
     yPosition: number,
     isBottom: boolean,
-  ): void {
-    // Create and render 6m zone (filled blue)
-    const zone6m = new HandballZone(
-      centerX,
-      yPosition,
-      6,
-      this.config,
-      isBottom,
+  ): StaticEntity[] {
+    const entities: StaticEntity[] = [];
+
+    // 6m zone (filled blue)
+    entities.push(
+      new ZoneEntity(
+        centerX,
+        yPosition,
+        6,
+        this.config,
+        this.styles,
+        isBottom,
+        true,
+      ),
     );
-    const zone6mShape = zone6m.createShape(this.styles, true);
-    zone6mShape.name('court-goal-area');
-    this.layer.add(zone6mShape);
 
-    // Create and render 9m zone (dashed line)
-    const zone9m = new HandballZone(
-      centerX,
-      yPosition,
-      9,
-      this.config,
-      isBottom,
+    // 9m zone (dashed line)
+    entities.push(
+      new ZoneEntity(
+        centerX,
+        yPosition,
+        9,
+        this.config,
+        this.styles,
+        isBottom,
+        false,
+      ),
     );
-    const zone9mShape = zone9m.createShape(this.styles, false);
-    zone9mShape.name('court-goal-area');
-    this.layer.add(zone9mShape);
 
-    // Render goal line
-    this.renderGoalLine(centerX, yPosition);
-  }
-
-  /**
-   * Renders the goal line (3m wide, centered)
-   */
-  private renderGoalLine(centerX: number, yPosition: number): void {
+    // Goal line
     const halfGoalPx =
       (this.config.goalWidthM / 2) * this.config.pixelsPerMeter;
+    const goalLinePoints = [
+      centerX - halfGoalPx,
+      yPosition,
+      centerX + halfGoalPx,
+      yPosition,
+    ];
 
-    const goalLine = new Konva.Line({
-      name: 'court-goal-area',
-      points: [
-        centerX - halfGoalPx,
-        yPosition,
-        centerX + halfGoalPx,
-        yPosition,
-      ],
-      stroke: this.styles.goalLineColor,
-      strokeWidth: this.styles.goalLineWidth,
-    });
+    entities.push(
+      new LineEntity(
+        `goal-line-${isBottom ? 'bottom' : 'top'}`,
+        goalLinePoints,
+        this.config,
+        this.styles,
+        this.styles.goalLineColor,
+        this.styles.goalLineWidth,
+      ),
+    );
 
-    this.layer.add(goalLine);
+    return entities;
   }
 
   /**
-   * Renders center line and center circle
+   * Creates center line and center circle entities for full court mode
    */
-  private renderCenterElements(): void {
+  private createCenterEntities(): StaticEntity[] {
     // Skip center elements in half court mode
-    // In half court mode, the bottom border represents the center/medium line
     if (this.config.halfCourt) {
-      return;
+      return [];
     }
 
+    const entities: StaticEntity[] = [];
     const width = this.config.widthM * this.config.pixelsPerMeter;
     const height = this.config.heightM * this.config.pixelsPerMeter;
 
     // Center line
-    const centerLine = new Konva.Line({
-      name: 'court-center',
-      points: [0, height / 2, width, height / 2],
-      stroke: this.styles.borderColor,
-      strokeWidth: this.styles.borderWidth,
-    });
-    this.layer.add(centerLine);
+    const centerLinePoints = [0, height / 2, width, height / 2];
+    entities.push(
+      new LineEntity(
+        'center-line',
+        centerLinePoints,
+        this.config,
+        this.styles,
+        this.styles.borderColor,
+        this.styles.borderWidth,
+      ),
+    );
 
     // Center circle (radius = 3m in handball)
-    const centerCircleRadius = 3 * this.config.pixelsPerMeter;
-    const centerCircle = new Konva.Circle({
-      name: 'court-center',
-      x: width / 2,
-      y: height / 2,
-      radius: centerCircleRadius,
-      stroke: this.styles.borderColor,
-      strokeWidth: this.styles.borderWidth,
-      fill: 'transparent',
-    });
-    this.layer.add(centerCircle);
+    entities.push(
+      new CircleEntity(
+        'center-circle',
+        width / 2,
+        height / 2,
+        3,
+        this.config,
+        this.styles,
+      ),
+    );
+
+    return entities;
   }
 }
