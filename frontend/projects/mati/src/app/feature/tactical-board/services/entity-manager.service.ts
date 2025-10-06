@@ -45,20 +45,6 @@ export class EntityManager {
   }
 
   /**
-   * Gets an entity by ID
-   */
-  get(entityId: string): Entity | undefined {
-    return this.entities.get(entityId)?.entity;
-  }
-
-  /**
-   * Gets the shape associated with an entity
-   */
-  getShape(entityId: string): Konva.Group | Konva.Shape | undefined {
-    return this.entities.get(entityId)?.shape;
-  }
-
-  /**
    * Gets all entities
    */
   getAll(): Entity[] {
@@ -94,32 +80,10 @@ export class EntityManager {
   }
 
   /**
-   * Gets the current ball (if any)
-   */
-  getBall(): Ball | null {
-    const balls = this.getByType(Ball);
-    return balls.length > 0 ? balls[0] : null;
-  }
-
-  /**
    * Checks if a ball exists on the court
    */
   hasBall(): boolean {
     return this.getByType(Ball).length > 0;
-  }
-
-  /**
-   * Checks if any entities exist
-   */
-  hasEntities(): boolean {
-    return this.entities.size > 0;
-  }
-
-  /**
-   * Gets the count of entities
-   */
-  count(): number {
-    return this.entities.size;
   }
 
   /**

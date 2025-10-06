@@ -13,7 +13,7 @@ export interface EntityCoordinates {
  * (players, ball, zones, lines, circles, background, etc.)
  *
  * Unified design: All entities manage their own Konva shapes and
- * update them using consistent toMeters/fromMeters scaling
+ * update them consistently when the court scale changes
  */
 export abstract class Entity {
   id: string;
@@ -30,16 +30,6 @@ export abstract class Entity {
    */
   updateCoordinates(x: number, y: number): void {
     this.coordinates = { x, y };
-  }
-
-  /**
-   * Converts pixel coordinates to meters
-   */
-  toMeters(pixelsPerMeter: number): EntityCoordinates {
-    return {
-      x: this.coordinates.x / pixelsPerMeter,
-      y: this.coordinates.y / pixelsPerMeter,
-    };
   }
 
   /**
@@ -60,16 +50,9 @@ export abstract class Entity {
   abstract updateShape(pixelsPerMeter: number, scaleFactor?: number): void;
 
   /**
-   * Sets the shape reference after creation
+   * Sets the shape reference after creation (called by EntityManager)
    */
   setShape(shape: Konva.Group | Konva.Shape): void {
     this.shape = shape;
-  }
-
-  /**
-   * Gets the current shape reference
-   */
-  getShape(): Konva.Group | Konva.Shape | undefined {
-    return this.shape;
   }
 }

@@ -19,16 +19,6 @@ export abstract class MovingEntity extends Entity {
   }
 
   /**
-   * Sets the entity's draggable state
-   */
-  setDraggable(draggable: boolean): void {
-    this.draggable = draggable;
-    if (this.shape && this.shape instanceof Konva.Group) {
-      this.shape.draggable(draggable);
-    }
-  }
-
-  /**
    * Toggles the visibility of the coordinate display
    */
   setCoordinatesVisible(visible: boolean): void {
@@ -116,10 +106,4 @@ export abstract class MovingEntity extends Entity {
     // Update coordinate text
     this.updateCoordinateText(pixelsPerMeter);
   }
-
-  /**
-   * Serializes the entity state to a plain object for preservation
-   * Positions are stored in meters for scale-independence
-   */
-  abstract toState(pixelsPerMeter: number): Record<string, unknown>;
 }

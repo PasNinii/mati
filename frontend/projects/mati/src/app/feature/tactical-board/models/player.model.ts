@@ -164,47 +164,6 @@ export class Player extends MovingEntity {
     return group;
   }
 
-  /**
-   * Updates player styling
-   */
-  setStyles(styles: Partial<PlayerStyles>): void {
-    this.styles = { ...this.styles, ...styles };
-  }
-
-  /**
-   * Serializes the player state to a plain object
-   */
-  toState(pixelsPerMeter: number): Record<string, unknown> {
-    const meters = this.toMeters(pixelsPerMeter);
-    return {
-      team: this.team,
-      role: this.role,
-      position: this.position,
-      xMeters: meters.x,
-      yMeters: meters.y,
-      draggable: this.draggable,
-    };
-  }
-
-  /**
-   * Static factory method to create a player from serialized state
-   */
-  static fromState(
-    data: Record<string, unknown>,
-    pixelsPerMeter: number,
-  ): Player {
-    return new Player(
-      data['team'] as Team,
-      data['role'] as PlayerRole,
-      data['position'] as PlayerPosition,
-      {
-        x: (data['xMeters'] as number) * pixelsPerMeter,
-        y: (data['yMeters'] as number) * pixelsPerMeter,
-      },
-      data['draggable'] as boolean,
-      DEFAULT_PLAYER_STYLES,
-    );
-  }
 }
 
 /**
