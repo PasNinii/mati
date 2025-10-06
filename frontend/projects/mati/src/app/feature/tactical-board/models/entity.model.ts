@@ -43,16 +43,6 @@ export abstract class Entity {
   }
 
   /**
-   * Converts meter coordinates to pixels and updates entity position
-   */
-  fromMeters(meters: EntityCoordinates, pixelsPerMeter: number): void {
-    this.coordinates = {
-      x: meters.x * pixelsPerMeter,
-      y: meters.y * pixelsPerMeter,
-    };
-  }
-
-  /**
    * Creates and returns the Konva shape for this entity
    * Each subclass must implement how to render itself
    */
@@ -64,8 +54,10 @@ export abstract class Entity {
   /**
    * Updates the shape's position/scale based on new pixelsPerMeter
    * Called during reinitialize - no shape destruction, just updates!
+   * @param pixelsPerMeter The new pixels per meter scale
+   * @param scaleFactor Optional scale factor (newPPM / oldPPM) for optimization
    */
-  abstract updateShape(pixelsPerMeter: number, scaleFactor: number): void;
+  abstract updateShape(pixelsPerMeter: number, scaleFactor?: number): void;
 
   /**
    * Sets the shape reference after creation

@@ -129,15 +129,4 @@ export class EntityManager {
     this.entities.forEach(({ shape }) => shape.destroy());
     this.entities.clear();
   }
-
-  /**
-   * Updates the shape for an existing entity
-   */
-  updateShape(entityId: string, newShape: Konva.Group): void {
-    const entry = this.entities.get(entityId);
-    if (entry) {
-      entry.shape.destroy();
-      this.entities.set(entityId, { entity: entry.entity, shape: newShape });
-    }
-  }
 }

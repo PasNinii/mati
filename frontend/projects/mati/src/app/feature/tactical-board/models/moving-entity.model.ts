@@ -102,8 +102,9 @@ export abstract class MovingEntity extends Entity {
    * Updates shape position and scale when config changes
    * For moving entities: just update position and coordinate display
    */
-  updateShape(pixelsPerMeter: number, scaleFactor: number): void {
+  override updateShape(pixelsPerMeter: number, scaleFactor?: number): void {
     if (!this.shape || !(this.shape instanceof Konva.Group)) return;
+    if (!scaleFactor) return; // Moving entities require scaleFactor
 
     // Scale position
     this.shape.x(this.shape.x() * scaleFactor);

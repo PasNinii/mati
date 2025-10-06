@@ -42,26 +42,15 @@ export class HandballCourtRenderer {
   }
 
   /**
-   * Renders the complete handball court (court + all entities)
-   * Creates and adds all static court entities + moving entities
+   * Renders the complete handball court (creates and adds all static court entities)
+   * Call initializeDefaultPlayers() after this to add moving entities
    */
   render(): void {
     // Create and add static court entities (background, zones, lines, circles)
     const courtEntities = this.courtRenderer.createCourtEntities();
     courtEntities.forEach((entity) => {
-      const shape = entity.createShape({ pixelsPerMeter: this.config.pixelsPerMeter });
-      this.layer.add(shape);
-      this.entityManager.add(entity, shape);
-    });
-
-    // Render any existing moving entities (players, ball)
-    this.entityManager.getAll().forEach((entity) => {
-      // Skip static entities that were just added
-      if (entity.getShape()) return;
-
       const shape = entity.createShape({
         pixelsPerMeter: this.config.pixelsPerMeter,
-        showCoordinates: this.showCoordinates,
       });
       this.layer.add(shape);
       this.entityManager.add(entity, shape);
@@ -240,11 +229,9 @@ export class HandballCourtRenderer {
           entity.setStyles(newStyles);
         }
       }
-      
+
       // Update shape geometry
       entity.updateShape(newPixelsPerMeter, scaleFactor);
     });
   }
 }
-
-

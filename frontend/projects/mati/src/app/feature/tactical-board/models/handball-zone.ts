@@ -1,5 +1,4 @@
-import Konva from 'konva';
-import { CourtConfig, CourtStyles } from '../models/court-config.interface';
+import { CourtConfig } from '../models/court-config.interface';
 import { GeometryUtils, Point2D } from '../utils/geometry.utils';
 
 /**
@@ -116,31 +115,5 @@ export class HandballZone {
     }
 
     return points;
-  }
-
-  /**
-   * Creates a Konva.Path shape for this zone
-   * @param styles Visual styling configuration
-   * @param isSixMeterZone Whether this is a 6m zone (filled) or 9m zone (outlined)
-   */
-  createShape(styles: CourtStyles, isSixMeterZone: boolean): Konva.Path {
-    const pathData = this.buildPath();
-
-    if (isSixMeterZone) {
-      // 6m zone: filled, no stroke
-      return new Konva.Path({
-        data: pathData,
-        fill: styles.zone6mColor,
-      });
-    } else {
-      // 9m zone: dashed stroke, no fill
-      return new Konva.Path({
-        data: pathData,
-        stroke: styles.zone9mColor,
-        strokeWidth: styles.zoneLineWidth,
-        // Width & number of dashes can be adjusted as needed
-        dash: [16, 8],
-      });
-    }
   }
 }

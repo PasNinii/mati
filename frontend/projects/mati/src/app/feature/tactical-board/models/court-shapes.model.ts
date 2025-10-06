@@ -30,7 +30,7 @@ export class BackgroundEntity extends StaticEntity {
     return rect;
   }
 
-  updateShape(pixelsPerMeter: number): void {
+  override updateShape(pixelsPerMeter: number): void {
     if (!this.shape || !(this.shape instanceof Konva.Rect)) return;
 
     const width = this.config.widthM * pixelsPerMeter;
@@ -94,7 +94,7 @@ export class ZoneEntity extends StaticEntity {
     return path;
   }
 
-  updateShape(pixelsPerMeter: number): void {
+  override updateShape(pixelsPerMeter: number): void {
     if (!this.shape || !(this.shape instanceof Konva.Path)) return;
 
     // Recalculate positions based on new scale
@@ -152,8 +152,9 @@ export class LineEntity extends StaticEntity {
     return line;
   }
 
-  updateShape(pixelsPerMeter: number, scaleFactor: number): void {
+  override updateShape(pixelsPerMeter: number, scaleFactor?: number): void {
     if (!this.shape || !(this.shape instanceof Konva.Line)) return;
+    if (!scaleFactor) return; // LineEntity requires scaleFactor
 
     // Scale all points
     const scaledPoints = this.points.map((p) => p * scaleFactor);
@@ -201,7 +202,7 @@ export class CircleEntity extends StaticEntity {
     return circle;
   }
 
-  updateShape(pixelsPerMeter: number): void {
+  override updateShape(pixelsPerMeter: number): void {
     if (!this.shape || !(this.shape instanceof Konva.Circle)) return;
 
     // Recalculate center positions

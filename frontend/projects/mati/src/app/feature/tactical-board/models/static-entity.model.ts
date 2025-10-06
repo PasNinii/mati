@@ -38,5 +38,8 @@ export abstract class StaticEntity extends Entity {
    * For static entities, updateShape must rebuild the shape's geometry
    * based on the new pixelsPerMeter (e.g., recalculate zone paths, line positions)
    */
-  abstract override updateShape(pixelsPerMeter: number, scaleFactor: number): void;
+  abstract override updateShape(
+    pixelsPerMeter: number,
+    scaleFactor?: number,
+  ): void;
 }
