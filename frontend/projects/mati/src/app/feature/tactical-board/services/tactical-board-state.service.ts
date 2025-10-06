@@ -47,13 +47,10 @@ export class TacticalBoardStateService implements OnDestroy {
     return (filter?.value() as boolean) ?? true;
   });
 
-  // Derived state
-  public readonly playerCount = signal(0);
   public readonly effectiveHeight = computed(() =>
     this.fullCourt() ? this.height() : this.height() / 2,
   );
 
-  // Konva objects
   private konvaContainer?: ElementRef<HTMLDivElement>;
   public readonly stage = linkedSignal<Konva.Stage | null>(() => {
     if (!this.konvaContainer) return null;
@@ -66,7 +63,7 @@ export class TacticalBoardStateService implements OnDestroy {
   });
 
   public readonly layer = signal<Konva.Layer>(new Konva.Layer());
-  private courtRenderer?: HandballCourtRenderer;
+  private courtRenderer!: HandballCourtRenderer;
 
   constructor() {
     // Watch for court configuration changes and re-render
@@ -78,7 +75,7 @@ export class TacticalBoardStateService implements OnDestroy {
       this.fullCourt();
 
       untracked(() => {
-        if (this.konvaContainer) {
+        if (this.isInitialized()) {
           this.initializeAndRenderCourt();
         }
       });
@@ -88,7 +85,7 @@ export class TacticalBoardStateService implements OnDestroy {
     effect(() => {
       const showCoords = this.showCoordinates();
       untracked(() => {
-        if (this.courtRenderer) {
+        if (this.isInitialized()) {
           this.courtRenderer.setShowCoordinates(showCoords);
         }
       });
@@ -98,7 +95,7 @@ export class TacticalBoardStateService implements OnDestroy {
     effect(() => {
       const shouldShowBall = this.showBall();
       untracked(() => {
-        if (this.courtRenderer) {
+        if (this.isInitialized()) {
           if (shouldShowBall && !this.hasBall()) {
             this.addBall();
           } else if (!shouldShowBall && this.hasBall()) {
@@ -107,6 +104,13 @@ export class TacticalBoardStateService implements OnDestroy {
         }
       });
     });
+  }
+
+  /**
+   * Checks if the service is fully initialized
+   */
+  private isInitialized(): boolean {
+    return !!this.konvaContainer && !!this.courtRenderer;
   }
 
   ngOnDestroy(): void {
@@ -126,38 +130,34 @@ export class TacticalBoardStateService implements OnDestroy {
    * Initializes Konva stage and renders the handball court
    */
   private initializeAndRenderCourt(): void {
-    if (!this.konvaContainer) return;
-
     const currentStage = this.stage();
-    if (currentStage) {
-      currentStage.add(this.layer());
+    if (!currentStage) return;
 
-      const config = this.buildCourtConfig();
-      const styles = DEFAULT_COURT_STYLES;
+    currentStage.add(this.layer());
 
-      // If renderer exists, reinitialize it to preserve entities
-      if (this.courtRenderer) {
-        this.courtRenderer.reinitialize(config, styles);
-        this.courtRenderer.setShowCoordinates(this.showCoordinates());
-      } else {
-        // First time initialization
-        this.courtRenderer = new HandballCourtRenderer(
-          this.layer(),
-          config,
-          styles,
-        );
+    const config = this.buildCourtConfig();
+    const styles = DEFAULT_COURT_STYLES;
 
-        // Set initial showCoordinates state
-        this.courtRenderer.setShowCoordinates(this.showCoordinates());
+    // If renderer exists, reinitialize it to preserve entities
+    if (this.courtRenderer) {
+      this.courtRenderer.reinitialize(config, styles);
+      this.courtRenderer.setShowCoordinates(this.showCoordinates());
+    } else {
+      // First time initialization
+      this.courtRenderer = new HandballCourtRenderer(
+        this.layer(),
+        config,
+        styles,
+      );
 
-        // Render court background
-        this.courtRenderer.render();
+      // Set initial showCoordinates state
+      this.courtRenderer.setShowCoordinates(this.showCoordinates());
 
-        // Add default players
-        this.courtRenderer.initializeDefaultPlayers();
-      }
+      // Render court background
+      this.courtRenderer.render();
 
-      this.updatePlayerCount();
+      // Add default players
+      this.courtRenderer.initializeDefaultPlayers();
     }
   }
 
@@ -165,7 +165,6 @@ export class TacticalBoardStateService implements OnDestroy {
    * Adds the ball to the court at the center position
    */
   private addBall(): void {
-    if (!this.courtRenderer) return;
     this.courtRenderer.addBall();
   }
 
@@ -173,7 +172,6 @@ export class TacticalBoardStateService implements OnDestroy {
    * Removes the ball from the court
    */
   private removeBall(): void {
-    if (!this.courtRenderer) return;
     this.courtRenderer.removeBall();
   }
 
@@ -181,19 +179,7 @@ export class TacticalBoardStateService implements OnDestroy {
    * Checks if the ball is currently on the court
    */
   private hasBall(): boolean {
-    if (!this.courtRenderer) return false;
     return this.courtRenderer.hasBall();
-  }
-
-  /**
-   * Updates the player count signal
-   */
-  private updatePlayerCount(): void {
-    if (this.courtRenderer) {
-      this.playerCount.set(this.courtRenderer.getPlayers().length);
-    } else {
-      this.playerCount.set(0);
-    }
   }
 
   /**
