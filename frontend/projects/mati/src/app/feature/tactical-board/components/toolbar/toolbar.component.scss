@@ -1,0 +1,20 @@
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 16px;
+  flex-wrap: wrap;
+}
+
+.transport-controls,
+.keyframe-controls,
+.file-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.keyframe-controls,
+.file-controls {
+  gap: 8px;
+}
