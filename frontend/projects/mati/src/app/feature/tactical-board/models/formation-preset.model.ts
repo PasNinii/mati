@@ -1,9 +1,4 @@
-import {
-  AttackPosition,
-  DefensePosition,
-  Team,
-  PlayerRole,
-} from './player.model';
+import { AttackPosition, DefensePosition } from './player.model';
 import { EntityDefinition } from './scenario.model';
 
 export interface FormationPreset {

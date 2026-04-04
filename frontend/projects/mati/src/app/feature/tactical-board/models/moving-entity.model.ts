@@ -7,6 +7,7 @@ import { Entity } from './entity.model';
  */
 export abstract class MovingEntity extends Entity {
   draggable: boolean;
+  dirty = false;
   protected showCoordinates: boolean = false;
 
   constructor(
@@ -75,9 +76,25 @@ export abstract class MovingEntity extends Entity {
     pixelsPerMeter: number,
   ): void {
     group.on('dragmove', () => {
+      this.dirty = true;
       this.updateCoordinates(group.x(), group.y());
       this.updateCoordinatesDisplay(pixelsPerMeter);
     });
+  }
+
+  clearDirty(): void {
+    this.dirty = false;
+  }
+
+  setPosition(xMeters: number, yMeters: number, pixelsPerMeter: number): void {
+    const xPx = xMeters * pixelsPerMeter;
+    const yPx = yMeters * pixelsPerMeter;
+    if (this.shape instanceof Konva.Group) {
+      this.shape.x(xPx);
+      this.shape.y(yPx);
+      this.updateCoordinates(xPx, yPx);
+      this.updateCoordinatesDisplay(pixelsPerMeter);
+    }
   }
 
   /**

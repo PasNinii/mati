@@ -1,4 +1,5 @@
 import { inject, Injectable, signal } from '@angular/core';
+import Konva from 'konva';
 import { Keyframe } from '../models/scenario.model';
 import { EntityManager } from './entity-manager.service';
 import { MovingEntity } from '../models/moving-entity.model';
@@ -124,9 +125,9 @@ export class PlaybackService {
   private setDraggable(draggable: boolean): void {
     this.entityManager.getAll().forEach((entity) => {
       if (entity instanceof MovingEntity) {
-        const shape = entity.getShape();
+        const shape = entity.getShape() as Konva.Group | undefined;
         if (shape) {
-          shape.setAttr('draggable', draggable);
+          shape.draggable(draggable);
         }
       }
     });

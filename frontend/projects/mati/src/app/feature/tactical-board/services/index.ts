@@ -9,3 +9,4 @@ export * from './konva-stage.service';
 export * from './scenario.service';
 export * from './selection.service';
 export * from './playback.service';
+export * from './studio-state.service';
