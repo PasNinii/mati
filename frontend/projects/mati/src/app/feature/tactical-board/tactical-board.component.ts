@@ -15,6 +15,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { FilterComponent } from '../../pattern/filter';
 import { KeyboardShortcutService } from '../../core/services/keyboard-shortcut.service';
 import { TacticalBoardStateService } from './services';
+import { KonvaStageService } from './services/konva-stage.service';
+import { EntityManager } from './services/entity-manager.service';
 
 @Component({
   selector: 'mati-tactical-board',
@@ -25,7 +27,7 @@ import { TacticalBoardStateService } from './services';
     MatDividerModule,
     FilterComponent,
   ],
-  providers: [TacticalBoardStateService],
+  providers: [TacticalBoardStateService, KonvaStageService, EntityManager],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './tactical-board.component.scss',
   template: `
