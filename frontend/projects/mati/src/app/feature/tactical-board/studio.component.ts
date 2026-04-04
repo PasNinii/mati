@@ -12,7 +12,7 @@ import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 
-import { TimelineComponent } from './components/timeline/timeline.component';
+import { StepListComponent } from './components/step-list/step-list.component';
 import { ToolbarComponent } from './components/toolbar/toolbar.component';
 import { StudioStateService } from './services/studio-state.service';
 import { KonvaStageService } from './services/konva-stage.service';
@@ -25,7 +25,7 @@ import { KeyboardShortcutService } from '../../core/services/keyboard-shortcut.s
 @Component({
   selector: 'mati-studio',
   imports: [
-    TimelineComponent,
+    StepListComponent,
     ToolbarComponent,
     FormsModule,
     MatFormFieldModule,
@@ -85,12 +85,13 @@ import { KeyboardShortcutService } from '../../core/services/keyboard-shortcut.s
           (newScenario)="state.newScenario()"
         />
 
-        <mati-timeline
+        <mati-step-list
           [keyframes]="state.sortedKeyframes()"
           [currentTime]="state.currentTime()"
           [duration]="state.duration()"
-          (timeChange)="state.seekTo($event)"
-          (keyframeSelect)="state.seekTo($event)"
+          (stepSelect)="state.seekTo($event)"
+          (addStep)="state.addKeyframe()"
+          (gapChange)="state.updateStepGap($event.index, $event.newGap)"
         />
       </div>
     </div>

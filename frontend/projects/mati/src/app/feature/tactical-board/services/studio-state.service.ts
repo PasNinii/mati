@@ -385,6 +385,31 @@ export class StudioStateService implements OnDestroy {
     });
   }
 
+  updateStepGap(index: number, newGap: number): void {
+    const sorted = this.sortedKeyframes();
+    if (index < 0 || index >= sorted.length - 1) return;
+
+    const currentGap = sorted[index + 1].time - sorted[index].time;
+    const delta = newGap - currentGap;
+    if (delta === 0) return;
+
+    const updated = this.keyframes().map((kf) => {
+      if (kf.time > sorted[index].time) {
+        return { ...kf, time: parseFloat((kf.time + delta).toFixed(1)) };
+      }
+      return kf;
+    });
+
+    this.keyframes.set(updated.sort((a, b) => a.time - b.time));
+
+    const maxTime = Math.max(...updated.map((kf) => kf.time));
+    if (maxTime > this.duration()) {
+      this.duration.set(Math.ceil(maxTime));
+    }
+
+    this.refreshOverlays();
+  }
+
   refreshOverlays(): void {
     if (this.playbackService.isPlaying()) {
       this.overlayService.clearAll();
