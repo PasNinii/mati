@@ -15,6 +15,12 @@
 }
 
 .keyframe-controls,
-.file-controls {
+.file-controls,
+.drawing-controls {
   gap: 8px;
+}
+
+.active {
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
 }

@@ -21,7 +21,9 @@ import { SelectionService } from './selection.service';
 import { PlaybackService } from './playback.service';
 import { ScenarioService } from './scenario.service';
 import { OverlayService } from './overlay.service';
+import { AnnotationService } from './annotation.service';
 import { MovingEntity } from '../models/moving-entity.model';
+import { Annotation } from '../models/annotation.model';
 
 @Injectable()
 export class StudioStateService implements OnDestroy {
@@ -31,6 +33,7 @@ export class StudioStateService implements OnDestroy {
   readonly playbackService = inject(PlaybackService);
   private readonly scenarioService = inject(ScenarioService);
   readonly overlayService = inject(OverlayService);
+  readonly annotationService = inject(AnnotationService);
 
   // Scenario metadata
   readonly scenarioName = signal('Untitled');
@@ -73,6 +76,8 @@ export class StudioStateService implements OnDestroy {
     this.setupSelectionHandlers();
     this.loadDefaultFormation();
     this.overlayService.init();
+    this.annotationService.init();
+    this.setupDrawingHandlers();
   }
 
   private initCourt(): void {
@@ -415,6 +420,49 @@ export class StudioStateService implements OnDestroy {
     this.refreshOverlays();
   }
 
+  addAnnotationToCurrentKeyframe(annotation: Annotation): void {
+    const time = this.currentTime();
+    const updated = this.keyframes().map((kf) => {
+      if (kf.time === time) {
+        return {
+          ...kf,
+          annotations: [...(kf.annotations ?? []), annotation],
+        };
+      }
+      return kf;
+    });
+    this.keyframes.set(updated);
+    this.refreshOverlays();
+  }
+
+  private setupDrawingHandlers(): void {
+    const stage = this.konvaStage.stage;
+    if (!stage) return;
+
+    stage.on('mousedown', () => {
+      if (this.annotationService.drawingMode() === 'none') return;
+      if (this.playbackService.isPlaying()) return;
+      const pos = stage.getPointerPosition();
+      if (pos) this.annotationService.onStageMouseDown(pos);
+    });
+
+    stage.on('mousemove', () => {
+      if (this.annotationService.drawingMode() === 'none') return;
+      const pos = stage.getPointerPosition();
+      if (pos) this.annotationService.onStageMouseMove(pos);
+    });
+
+    stage.on('mouseup', () => {
+      if (this.annotationService.drawingMode() === 'none') return;
+      const pos = stage.getPointerPosition();
+      if (!pos) return;
+      const annotation = this.annotationService.onStageMouseUp(pos);
+      if (annotation) {
+        this.addAnnotationToCurrentKeyframe(annotation);
+      }
+    });
+  }
+
   refreshOverlays(): void {
     if (this.playbackService.isPlaying()) {
       this.overlayService.clearAll();
@@ -428,6 +476,10 @@ export class StudioStateService implements OnDestroy {
     this.overlayService.updateArrows(kfs, time, ppm);
     this.overlayService.updateGhosts(kfs, time, ppm);
     this.overlayService.updateDirtyIndicators();
+
+    // Render annotations for current keyframe
+    const currentKf = kfs.find((kf) => kf.time === time);
+    this.annotationService.renderAnnotations(currentKf?.annotations ?? []);
   }
 
   private clearAllDirty(): void {

@@ -67,6 +67,17 @@ import { MatTooltipModule } from '@angular/material/tooltip';
         </button>
       </div>
 
+      <div class="drawing-controls">
+        <button
+          mat-icon-button
+          matTooltip="Arrow tool (A)"
+          [class.active]="isDrawingArrow()"
+          (click)="toggleArrowMode.emit()"
+        >
+          <mat-icon>arrow_forward</mat-icon>
+        </button>
+      </div>
+
       <div class="file-controls">
         <button
           mat-stroked-button
@@ -97,6 +108,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 export class ToolbarComponent {
   isPlaying = input.required<boolean>();
   canDeleteKeyframe = input.required<boolean>();
+  isDrawingArrow = input.required<boolean>();
 
   togglePlay = output<void>();
   stop = output<void>();
@@ -107,4 +119,5 @@ export class ToolbarComponent {
   save = output<void>();
   load = output<void>();
   newScenario = output<void>();
+  toggleArrowMode = output<void>();
 }

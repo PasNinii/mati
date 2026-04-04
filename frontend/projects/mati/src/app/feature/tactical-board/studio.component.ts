@@ -20,6 +20,7 @@ import { EntityManager } from './services/entity-manager.service';
 import { SelectionService } from './services/selection.service';
 import { PlaybackService } from './services/playback.service';
 import { OverlayService } from './services/overlay.service';
+import { AnnotationService } from './services/annotation.service';
 import { KeyboardShortcutService } from '../../core/services/keyboard-shortcut.service';
 
 @Component({
@@ -38,6 +39,7 @@ import { KeyboardShortcutService } from '../../core/services/keyboard-shortcut.s
     SelectionService,
     PlaybackService,
     OverlayService,
+    AnnotationService,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './studio.component.scss',
@@ -74,6 +76,7 @@ import { KeyboardShortcutService } from '../../core/services/keyboard-shortcut.s
         <mati-toolbar
           [isPlaying]="state.playbackService.isPlaying()"
           [canDeleteKeyframe]="canDeleteKeyframe()"
+          [isDrawingArrow]="state.annotationService.drawingMode() === 'arrow'"
           (togglePlay)="state.togglePlayback()"
           (stop)="state.playbackService.stop()"
           (prevKeyframe)="state.prevKeyframe()"
@@ -83,6 +86,7 @@ import { KeyboardShortcutService } from '../../core/services/keyboard-shortcut.s
           (save)="state.save()"
           (load)="onLoad()"
           (newScenario)="state.newScenario()"
+          (toggleArrowMode)="state.annotationService.toggleArrowMode()"
         />
 
         <mati-step-list
@@ -139,6 +143,9 @@ export class StudioComponent {
       }),
       this.keyboardShortcutService.register('delete', () =>
         this.onDeleteKeyframe(),
+      ),
+      this.keyboardShortcutService.register('a', () =>
+        this.state.annotationService.toggleArrowMode(),
       ),
     ];
 
