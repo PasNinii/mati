@@ -72,12 +72,12 @@ export class StudioStateService implements OnDestroy {
     const h = this.heightM() * this.pixelsPerMeter();
 
     this.konvaStage.initStage(container, w, h);
-    this.initCourt();
-    this.setupSelectionHandlers();
-    this.loadDefaultFormation();
     this.overlayService.init();
     this.annotationService.init();
+    this.initCourt();
+    this.setupSelectionHandlers();
     this.setupDrawingHandlers();
+    this.loadDefaultFormation();
   }
 
   private initCourt(): void {
@@ -276,6 +276,7 @@ export class StudioStateService implements OnDestroy {
     // Click on entity
     layer.on('mousedown', (e: Konva.KonvaEventObject<MouseEvent>) => {
       if (this.playbackService.isPlaying()) return;
+      if (this.annotationService.drawingMode() !== 'none') return;
 
       const group = this.findEntityGroup(e.target);
       if (!group) return;
@@ -303,6 +304,7 @@ export class StudioStateService implements OnDestroy {
     // Multi-drag: track start positions on dragstart
     layer.on('dragstart', (e: Konva.KonvaEventObject<MouseEvent>) => {
       if (this.playbackService.isPlaying()) return;
+      if (this.annotationService.drawingMode() !== 'none') return;
 
       const group = this.findEntityGroup(e.target);
       if (!group) return;

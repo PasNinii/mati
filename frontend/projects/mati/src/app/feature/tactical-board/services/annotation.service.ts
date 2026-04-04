@@ -65,19 +65,19 @@ export class AnnotationService {
   onStageMouseUp(pos: { x: number; y: number }): Annotation | null {
     if (!this.drawStart) return null;
 
-    const dx = pos.x - this.drawStart.x;
-    const dy = pos.y - this.drawStart.y;
+    const start = this.drawStart;
+    const dx = pos.x - start.x;
+    const dy = pos.y - start.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
 
     this.clearPreview();
 
-    // Ignore very short drags
     if (dist < 10) return null;
 
     return {
       id: window.crypto.randomUUID(),
       type: 'arrow',
-      points: [this.drawStart.x, this.drawStart.y, pos.x, pos.y],
+      points: [start.x, start.y, pos.x, pos.y],
       color: '#FF9800',
       strokeWidth: 3,
     };
