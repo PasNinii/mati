@@ -82,6 +82,107 @@ export class OverlayService {
     this.konvaStage.overlayLayer().batchDraw();
   }
 
+  updateGhosts(
+    sortedKeyframes: Keyframe[],
+    currentTime: number,
+    pixelsPerMeter: number,
+  ): void {
+    this.ghostGroup.destroyChildren();
+
+    // Find prev and next keyframe relative to current time
+    let prevKf: Keyframe | null = null;
+    let nextKf: Keyframe | null = null;
+
+    for (let i = sortedKeyframes.length - 1; i >= 0; i--) {
+      if (sortedKeyframes[i].time < currentTime) {
+        prevKf = sortedKeyframes[i];
+        break;
+      }
+    }
+    for (const kf of sortedKeyframes) {
+      if (kf.time > currentTime) {
+        nextKf = kf;
+        break;
+      }
+    }
+
+    this.entityManager.getAll().forEach((entity) => {
+      if (!(entity instanceof MovingEntity)) return;
+
+      const currentPos = resolvePositionAtTime(entity.id, sortedKeyframes, currentTime);
+      if (!currentPos) return;
+
+      let color = '#999999';
+      let radius = 12;
+      if (entity instanceof Player) {
+        color = entity.getColor();
+        radius = entity.radius;
+      } else if (entity instanceof Ball) {
+        color = '#333333';
+        radius = entity.radius;
+      }
+
+      // Previous ghost
+      if (prevKf) {
+        const prevPos = prevKf.positions[entity.id];
+        if (prevPos && (Math.abs(prevPos.x - currentPos.x) > 0.01 || Math.abs(prevPos.y - currentPos.y) > 0.01)) {
+          this.ghostGroup.add(new Konva.Circle({
+            x: prevPos.x * pixelsPerMeter,
+            y: prevPos.y * pixelsPerMeter,
+            radius,
+            fill: color,
+            opacity: 0.25,
+          }));
+        }
+      }
+
+      // Next ghost
+      if (nextKf) {
+        const nextPos = nextKf.positions[entity.id];
+        if (nextPos && (Math.abs(nextPos.x - currentPos.x) > 0.01 || Math.abs(nextPos.y - currentPos.y) > 0.01)) {
+          this.ghostGroup.add(new Konva.Circle({
+            x: nextPos.x * pixelsPerMeter,
+            y: nextPos.y * pixelsPerMeter,
+            radius,
+            fill: color,
+            opacity: 0.15,
+          }));
+        }
+      }
+    });
+
+    this.konvaStage.overlayLayer().batchDraw();
+  }
+
+  updateDirtyIndicators(): void {
+    this.dirtyGroup.destroyChildren();
+
+    this.entityManager.getAll().forEach((entity) => {
+      if (!(entity instanceof MovingEntity) || !entity.dirty) return;
+
+      let radius = 12;
+      if (entity instanceof Player) {
+        radius = entity.radius;
+      } else if (entity instanceof Ball) {
+        radius = entity.radius;
+      }
+
+      const shape = entity.getShape() as Konva.Group | undefined;
+      if (!shape) return;
+
+      this.dirtyGroup.add(new Konva.Ring({
+        x: shape.x(),
+        y: shape.y(),
+        innerRadius: radius + 2,
+        outerRadius: radius + 5,
+        fill: '#76FF03',
+        opacity: 0.7,
+      }));
+    });
+
+    this.konvaStage.overlayLayer().batchDraw();
+  }
+
   clearAll(): void {
     this.arrowGroup.destroyChildren();
     this.ghostGroup.destroyChildren();

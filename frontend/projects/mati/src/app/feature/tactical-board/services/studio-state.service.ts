@@ -317,6 +317,11 @@ export class StudioStateService implements OnDestroy {
       });
     });
 
+    // Refresh dirty indicators after any drag
+    layer.on('dragend', () => {
+      this.overlayService.updateDirtyIndicators();
+    });
+
     // Multi-drag: move all selected entities by the same delta
     layer.on('dragmove', (e: Konva.KonvaEventObject<MouseEvent>) => {
       const group = this.findEntityGroup(e.target);
@@ -416,11 +421,13 @@ export class StudioStateService implements OnDestroy {
       return;
     }
 
-    this.overlayService.updateArrows(
-      this.sortedKeyframes(),
-      this.currentTime(),
-      this.pixelsPerMeter(),
-    );
+    const kfs = this.sortedKeyframes();
+    const time = this.currentTime();
+    const ppm = this.pixelsPerMeter();
+
+    this.overlayService.updateArrows(kfs, time, ppm);
+    this.overlayService.updateGhosts(kfs, time, ppm);
+    this.overlayService.updateDirtyIndicators();
   }
 
   private clearAllDirty(): void {
