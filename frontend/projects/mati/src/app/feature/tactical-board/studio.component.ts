@@ -19,6 +19,7 @@ import { KonvaStageService } from './services/konva-stage.service';
 import { EntityManager } from './services/entity-manager.service';
 import { SelectionService } from './services/selection.service';
 import { PlaybackService } from './services/playback.service';
+import { OverlayService } from './services/overlay.service';
 import { KeyboardShortcutService } from '../../core/services/keyboard-shortcut.service';
 
 @Component({
@@ -36,6 +37,7 @@ import { KeyboardShortcutService } from '../../core/services/keyboard-shortcut.s
     EntityManager,
     SelectionService,
     PlaybackService,
+    OverlayService,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './studio.component.scss',

@@ -20,6 +20,7 @@ import { EntityManager } from './entity-manager.service';
 import { SelectionService } from './selection.service';
 import { PlaybackService } from './playback.service';
 import { ScenarioService } from './scenario.service';
+import { OverlayService } from './overlay.service';
 import { MovingEntity } from '../models/moving-entity.model';
 
 @Injectable()
@@ -29,6 +30,7 @@ export class StudioStateService implements OnDestroy {
   readonly selectionService = inject(SelectionService);
   readonly playbackService = inject(PlaybackService);
   private readonly scenarioService = inject(ScenarioService);
+  readonly overlayService = inject(OverlayService);
 
   // Scenario metadata
   readonly scenarioName = signal('Untitled');
@@ -70,6 +72,7 @@ export class StudioStateService implements OnDestroy {
     this.initCourt();
     this.setupSelectionHandlers();
     this.loadDefaultFormation();
+    this.overlayService.init();
   }
 
   private initCourt(): void {
@@ -91,6 +94,7 @@ export class StudioStateService implements OnDestroy {
     // Create initial keyframe at t=0 with all positions
     this.keyframes.set([{ time: 0, positions: { ...formation.positions } }]);
     this.clearAllDirty();
+    this.refreshOverlays();
   }
 
   // ===== Keyframe management =====
@@ -138,11 +142,13 @@ export class StudioStateService implements OnDestroy {
 
     this.keyframes.set(updated.sort((a, b) => a.time - b.time));
     this.clearAllDirty();
+    this.refreshOverlays();
   }
 
   deleteKeyframe(time: number): void {
     if (time === 0) return;
     this.keyframes.update((kfs) => kfs.filter((kf) => kf.time !== time));
+    this.refreshOverlays();
   }
 
   seekTo(time: number): void {
@@ -154,6 +160,7 @@ export class StudioStateService implements OnDestroy {
       this.pixelsPerMeter(),
     );
     this.playbackService.seekTo(this.currentTime());
+    this.refreshOverlays();
   }
 
   nextKeyframe(): void {
@@ -181,7 +188,10 @@ export class StudioStateService implements OnDestroy {
 
     if (this.playbackService.isPlaying()) {
       this.playbackService.pause();
+      this.overlayService.setVisible(true);
+      this.refreshOverlays();
     } else {
+      this.overlayService.setVisible(false);
       this.playbackService.play();
     }
   }
@@ -234,6 +244,7 @@ export class StudioStateService implements OnDestroy {
     this.keyframes.set(scenario.keyframes);
     this.currentTime.set(0);
     this.clearAllDirty();
+    this.refreshOverlays();
   }
 
   newScenario(): void {
@@ -247,6 +258,7 @@ export class StudioStateService implements OnDestroy {
 
     this.initCourt();
     this.loadDefaultFormation();
+    this.refreshOverlays();
   }
 
   // ===== Selection + multi-drag =====
@@ -371,6 +383,19 @@ export class StudioStateService implements OnDestroy {
         circle.strokeWidth(2);
       }
     });
+  }
+
+  refreshOverlays(): void {
+    if (this.playbackService.isPlaying()) {
+      this.overlayService.clearAll();
+      return;
+    }
+
+    this.overlayService.updateArrows(
+      this.sortedKeyframes(),
+      this.currentTime(),
+      this.pixelsPerMeter(),
+    );
   }
 
   private clearAllDirty(): void {
