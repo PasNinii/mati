@@ -2,7 +2,6 @@ import {
   Component,
   input,
   output,
-  OnInit,
   inject,
   effect,
   ChangeDetectionStrategy,
@@ -89,41 +88,30 @@ import { FilterState } from './filter-config.interface';
   `,
   styleUrls: ['./filter.component.scss'],
 })
-export class FilterComponent implements OnInit {
+export class FilterComponent {
   private readonly filterService = inject(FilterService);
 
-  // Inputs using signal-based API
   configPath = input<string>('assets/filters/filter-config.json');
   showGroupNames = input<boolean>(true);
   showClearAll = input<boolean>(true);
   showShare = input<boolean>(true);
 
-  // Outputs using signal-based API
   filtersChanged = output<FilterState>();
 
   filterGroups = this.filterService.filterGroups;
   activeFiltersCount = this.filterService.activeFiltersCount;
 
   constructor() {
-    // Effect to emit filter changes whenever filterState changes
+    // Trigger config loading — httpResource in FilterService handles the rest
+    effect(() => {
+      this.filterService.loadFilterConfigs(this.configPath());
+    });
+
     effect(() => {
       const state = this.filterService.filterState();
-      // Use queueMicrotask to avoid triggering during change detection
       queueMicrotask(() => {
         this.filtersChanged.emit(state);
       });
-    });
-  }
-
-  ngOnInit() {
-    // Load filter configurations
-    this.filterService.loadFilterConfigs(this.configPath()).subscribe({
-      next: () => {
-        this.filterService.loadFiltersFromUrl();
-      },
-      error: (error) => {
-        console.error('Failed to load filter configurations:', error);
-      },
     });
   }
 
@@ -137,8 +125,6 @@ export class FilterComponent implements OnInit {
 
   shareFilters() {
     const url = window.location.href;
-
-    // Copy to clipboard
     navigator.clipboard
       .writeText(url)
       .then(() => {

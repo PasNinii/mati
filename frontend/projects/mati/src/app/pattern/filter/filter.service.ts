@@ -1,7 +1,7 @@
 import { Injectable, signal, computed, effect, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { httpResource } from '@angular/common/http';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { Router, ActivatedRoute, Params } from '@angular/router';
-import { Observable, map } from 'rxjs';
 import {
   FilterGroup,
   FilterGroupStructure,
@@ -14,10 +14,15 @@ import { createFilter } from './models/filter.factory';
 
 @Injectable({ providedIn: 'root' })
 export class FilterService {
-  private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly keyboardShortcutService = inject(KeyboardShortcutService);
+
+  // Config path drives httpResource — set via loadFilterConfigs()
+  private readonly configPath = signal<string | undefined>(undefined);
+
+  // Signal-based HTTP resource replaces HttpClient + RxJS pipe
+  readonly configResource = httpResource<FilterGroup[]>(() => this.configPath());
 
   // Filters map - centralized source of truth containing all filter instances
   public readonly filters = signal<Map<string, BaseFilter>>(new Map());
@@ -44,7 +49,35 @@ export class FilterService {
     () => Object.keys(this.filterState()).length,
   );
 
+  // Router queryParams as a signal — no manual subscription, no memory leak
+  private readonly queryParams = toSignal(this.route.queryParams, {
+    initialValue: {} as Params,
+  });
+
   constructor() {
+    // Initialize filters when httpResource resolves
+    effect(() => {
+      const groups = this.configResource.value();
+      if (groups) {
+        this.initializeFilters(groups);
+      }
+    });
+
+    // Apply URL params to filters once both are available
+    effect(() => {
+      const params = this.queryParams();
+      const filters = this.filters();
+      if (filters.size === 0) return;
+
+      Object.keys(params).forEach((key) => {
+        const filter = filters.get(key);
+        if (filter) {
+          filter.deserialize(params[key]);
+        }
+      });
+    });
+
+    // Sync filter state back to URL
     effect(() => {
       const state = this.filterState();
       this.updateUrlParams(state);
@@ -57,28 +90,12 @@ export class FilterService {
 
   public loadFilterConfigs(
     configPath: string = 'assets/filters/filter-config.json',
-  ): Observable<FilterGroup[]> {
-    return this.http.get<FilterGroup[]>(configPath).pipe(
-      map((groups) => {
-        this.initializeFilters(groups);
-        return groups;
-      }),
-    );
+  ): void {
+    this.configPath.set(configPath);
   }
 
   public clearAllFilters(): void {
     this.filters().forEach((filter) => filter.clear());
-  }
-
-  public loadFiltersFromUrl(): void {
-    this.route.queryParams.subscribe((params) => {
-      Object.keys(params).forEach((key) => {
-        const filter = this.filters().get(key);
-        if (filter) {
-          filter.deserialize(params[key]);
-        }
-      });
-    });
   }
 
   private updateUrlParams(state: FilterState): void {
@@ -103,6 +120,9 @@ export class FilterService {
   }
 
   private initializeFilters(groups: FilterGroup[]): void {
+    // Clean up shortcuts from previous filters before re-initializing
+    this.filters().forEach((filter) => filter.destroyShortcuts());
+
     const filterMap = new Map<string, BaseFilter>();
     const groupStructures: FilterGroupStructure[] = [];
 

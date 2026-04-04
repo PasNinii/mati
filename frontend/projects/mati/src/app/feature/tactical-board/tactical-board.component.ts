@@ -1,9 +1,8 @@
 import {
-  afterRenderEffect,
-  AfterViewInit,
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
-  effect,
+  DestroyRef,
   ElementRef,
   inject,
   viewChild,
@@ -56,7 +55,7 @@ import { TacticalBoardStateService } from './services';
     </mat-drawer-container>
   `,
 })
-export class TacticalBoardComponent implements AfterViewInit {
+export class TacticalBoardComponent {
   private readonly keyboardShortcutService = inject(KeyboardShortcutService);
   protected readonly stateService = inject(TacticalBoardStateService);
 
@@ -69,13 +68,15 @@ export class TacticalBoardComponent implements AfterViewInit {
   }
 
   constructor() {
-    this.keyboardShortcutService.register('ctrl+d', () => {
+    const destroyRef = inject(DestroyRef);
+    const unregister = this.keyboardShortcutService.register('ctrl+d', () => {
       this.toggleDrawer();
     });
-  }
+    destroyRef.onDestroy(unregister);
 
-  ngAfterViewInit(): void {
-    this.stateService.setKonvaContainer(this.konvaContainer());
+    afterNextRender(() => {
+      this.stateService.setKonvaContainer(this.konvaContainer());
+    });
   }
 
   protected toggleDrawer(): void {

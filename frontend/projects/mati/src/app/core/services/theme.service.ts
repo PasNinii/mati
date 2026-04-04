@@ -47,18 +47,4 @@ export class ThemeService {
   toggleTheme(): void {
     this.isDarkTheme.update((current) => !current);
   }
-
-  /**
-   * Set theme explicitly
-   */
-  setTheme(isDark: boolean): void {
-    this.isDarkTheme.set(isDark);
-  }
-
-  /**
-   * Get current theme state
-   */
-  getTheme(): boolean {
-    return this.isDarkTheme();
-  }
 }

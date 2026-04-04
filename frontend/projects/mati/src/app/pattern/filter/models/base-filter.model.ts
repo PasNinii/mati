@@ -19,22 +19,26 @@ export abstract class BaseFilter<T = unknown> {
   public readonly component: Type<BaseFilterComponent<T>> =
     BaseFilterComponent as Type<BaseFilterComponent<T>>;
 
+  // Shortcut cleanup functions
+  private shortcutCleanups: Array<() => void> = [];
+
   constructor(config: FilterConfig) {
     this.config = signal(config);
     this.value = signal(this.getDefaultValue());
   }
 
-  /**
-   * Initialize keyboard shortcuts for this filter
-   * Subclasses must implement this to register their shortcuts
-   */
   public abstract initShortcuts(shortcutService: {
     register: (shortcut: string, handler: () => void) => () => void;
   }): void;
 
   /**
-   * Helper to register a shortcut and store cleanup
+   * Unregister all shortcuts registered by this filter
    */
+  public destroyShortcuts(): void {
+    this.shortcutCleanups.forEach((cleanup) => cleanup());
+    this.shortcutCleanups = [];
+  }
+
   protected registerShortcut(
     service: {
       register: (shortcut: string, handler: () => void) => () => void;
@@ -42,7 +46,8 @@ export abstract class BaseFilter<T = unknown> {
     shortcut: string,
     handler: () => void,
   ): void {
-    service.register(shortcut, handler);
+    const cleanup = service.register(shortcut, handler);
+    this.shortcutCleanups.push(cleanup);
   }
 
   /**
