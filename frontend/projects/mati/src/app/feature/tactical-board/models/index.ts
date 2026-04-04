@@ -6,3 +6,5 @@ export * from './player.model';
 export * from './ball.model';
 export * from './court-config.interface';
 export * from './handball-zone';
+export * from './scenario.model';
+export * from './formation-preset.model';
