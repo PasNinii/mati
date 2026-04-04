@@ -104,6 +104,46 @@ export class StudioStateService implements OnDestroy {
 
   // ===== Keyframe management =====
 
+  addStep(): void {
+    const sorted = this.sortedKeyframes();
+    const currentIdx = sorted.findIndex((kf) => kf.time === this.currentTime());
+    const defaultGap = 2;
+
+    let newTime: number;
+    if (currentIdx >= 0 && currentIdx < sorted.length - 1) {
+      // Insert between current and next: midpoint
+      const gap = sorted[currentIdx + 1].time - sorted[currentIdx].time;
+      newTime = parseFloat((sorted[currentIdx].time + gap / 2).toFixed(1));
+    } else {
+      // Append after last keyframe (or after current)
+      const lastTime = sorted.length > 0 ? sorted[sorted.length - 1].time : 0;
+      newTime = parseFloat((lastTime + defaultGap).toFixed(1));
+    }
+
+    // Extend duration if needed
+    if (newTime >= this.duration()) {
+      this.duration.set(Math.ceil(newTime + 1));
+    }
+
+    // Snapshot all current positions at the new time
+    const positions: Record<string, { x: number; y: number }> = {};
+    const ppm = this.pixelsPerMeter();
+    this.entityManager.getAll().forEach((entity) => {
+      if (entity instanceof MovingEntity) {
+        positions[entity.id] = {
+          x: parseFloat((entity.coordinates.x / ppm).toFixed(2)),
+          y: parseFloat((entity.coordinates.y / ppm).toFixed(2)),
+        };
+      }
+    });
+
+    this.keyframes.update((kfs) =>
+      [...kfs, { time: newTime, positions }].sort((a, b) => a.time - b.time),
+    );
+
+    this.seekTo(newTime);
+  }
+
   addKeyframe(): void {
     const time = this.currentTime();
     const dirtyPositions: Record<string, { x: number; y: number }> = {};

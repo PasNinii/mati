@@ -94,7 +94,7 @@ import { KeyboardShortcutService } from '../../core/services/keyboard-shortcut.s
           [currentTime]="state.currentTime()"
           [duration]="state.duration()"
           (stepSelect)="state.seekTo($event)"
-          (addStep)="state.addKeyframe()"
+          (addStep)="state.addStep()"
           (gapChange)="state.updateStepGap($event.index, $event.newGap)"
         />
       </div>
