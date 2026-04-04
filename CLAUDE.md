@@ -31,6 +31,45 @@ Feature-based modular Angular app (zoneless, signals-first, no NgModules).
 
 **Data flow:** `FilterService` loads JSON config → `TacticalBoardStateService` uses `linkedSignal()` to bind filter values → effects trigger `HandballCourtRenderer` → Konva stage updates in component's `konvaContainer` ref.
 
+## Import Boundaries (enforced by eslint-plugin-boundaries)
+
+Layers can only import from layers above them:
+
+```
+core        ← base layer (theme, keyboard shortcuts)
+ui          ← can import core
+pattern     ← can import core, ui
+feature     ← can import core, ui, pattern (NOT other features)
+feature-routes ← can import core, pattern, own feature (NOT other feature-routes)
+layout      ← can import core, ui, pattern
+app         ← can import core, layout, feature-routes
+```
+
+Features are isolated — `feature/tactical-board/` cannot import from another feature.
+
+## Filter Config Format
+
+Filter configs live in `assets/filters/*.json`. Structure:
+
+```json
+[{
+  "id": "group-id",
+  "name": "Group Name",
+  "filters": [{
+    "id": "filterId",          // maps to FilterService key + URL query param
+    "label": "Display Label",
+    "type": "slider|boolean",  // determines BaseFilter subclass
+    "defaultValue": 30,
+    "min": 10, "max": 100, "step": 5,  // slider-specific
+    "clearable": false,
+    "shortcut": "ctrl+b",              // boolean-specific
+    "shortcuts": { "increment": "ctrl+i", "decrement": "ctrl+o" }  // slider-specific
+  }]
+}]
+```
+
+`FilterService` loads these at init, creates typed filter instances, and syncs values to URL query params using the `id` as the param name.
+
 ## Angular Conventions
 
 - Standalone components (do **not** set `standalone: true` — it's the default)

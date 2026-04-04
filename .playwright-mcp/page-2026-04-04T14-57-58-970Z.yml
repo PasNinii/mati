@@ -1,0 +1,5 @@
+- generic [ref=e3]:
+  - button "Toggle theme" [ref=e4] [cursor=pointer]:
+    - img [ref=e5]: dark_mode
+  - button "Toggle settings" [ref=e12] [cursor=pointer]:
+    - img [ref=e13]: settings
