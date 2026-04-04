@@ -48,22 +48,13 @@ import { MatTooltipModule } from '@angular/material/tooltip';
       <div class="keyframe-controls">
         <button
           mat-stroked-button
-          matTooltip="Add keyframe (Ctrl+K)"
-          (click)="addKeyframe.emit()"
-        >
-          <mat-icon>add</mat-icon>
-          Keyframe
-        </button>
-
-        <button
-          mat-stroked-button
           color="warn"
-          matTooltip="Delete keyframe (Delete)"
+          matTooltip="Delete step (Delete)"
           [disabled]="!canDeleteKeyframe()"
           (click)="deleteKeyframe.emit()"
         >
           <mat-icon>remove</mat-icon>
-          Delete
+          Delete Step
         </button>
       </div>
 
@@ -114,7 +105,6 @@ export class ToolbarComponent {
   stop = output<void>();
   prevKeyframe = output<void>();
   nextKeyframe = output<void>();
-  addKeyframe = output<void>();
   deleteKeyframe = output<void>();
   save = output<void>();
   load = output<void>();

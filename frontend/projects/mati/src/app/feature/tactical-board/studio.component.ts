@@ -78,10 +78,9 @@ import { KeyboardShortcutService } from '../../core/services/keyboard-shortcut.s
           [canDeleteKeyframe]="canDeleteKeyframe()"
           [isDrawingArrow]="state.annotationService.drawingMode() === 'arrow'"
           (togglePlay)="state.togglePlayback()"
-          (stop)="state.playbackService.stop()"
+          (stop)="state.stop()"
           (prevKeyframe)="state.prevKeyframe()"
           (nextKeyframe)="state.nextKeyframe()"
-          (addKeyframe)="state.addKeyframe()"
           (deleteKeyframe)="onDeleteKeyframe()"
           (save)="state.save()"
           (load)="onLoad()"
@@ -131,12 +130,9 @@ export class StudioComponent {
         this.state.nextKeyframe(),
       ),
       this.keyboardShortcutService.register('ctrl+s', () => this.state.save()),
-      this.keyboardShortcutService.register('ctrl+k', () =>
-        this.state.addKeyframe(),
-      ),
       this.keyboardShortcutService.register('escape', () => {
         if (this.state.playbackService.isPlaying()) {
-          this.state.playbackService.stop();
+          this.state.stop();
         } else {
           this.state.selectionService.clearSelection();
         }

@@ -104,6 +104,32 @@ export class StudioStateService implements OnDestroy {
 
   // ===== Keyframe management =====
 
+  private saveDirtyPositions(): void {
+    const ppm = this.pixelsPerMeter();
+    const dirtyPositions: Record<string, { x: number; y: number }> = {};
+
+    this.entityManager.getAll().forEach((entity) => {
+      if (entity instanceof MovingEntity && entity.dirty) {
+        dirtyPositions[entity.id] = {
+          x: parseFloat((entity.coordinates.x / ppm).toFixed(2)),
+          y: parseFloat((entity.coordinates.y / ppm).toFixed(2)),
+        };
+      }
+    });
+
+    if (Object.keys(dirtyPositions).length === 0) return;
+
+    const time = this.currentTime();
+    this.keyframes.update((kfs) =>
+      kfs.map((kf) =>
+        kf.time === time
+          ? { ...kf, positions: { ...kf.positions, ...dirtyPositions } }
+          : kf,
+      ),
+    );
+    this.clearAllDirty();
+  }
+
   addStep(): void {
     const sorted = this.sortedKeyframes();
     const currentIdx = sorted.findIndex((kf) => kf.time === this.currentTime());
@@ -197,8 +223,8 @@ export class StudioStateService implements OnDestroy {
   }
 
   seekTo(time: number): void {
+    this.saveDirtyPositions();
     this.currentTime.set(Math.max(0, Math.min(time, this.duration())));
-    this.clearAllDirty();
     this.playbackService.configure(
       this.sortedKeyframes(),
       this.duration(),
@@ -224,7 +250,18 @@ export class StudioStateService implements OnDestroy {
 
   // ===== Playback =====
 
+  stop(): void {
+    this.playbackService.stop();
+    this.currentTime.set(0);
+    this.overlayService.setVisible(true);
+    this.refreshOverlays();
+  }
+
   togglePlayback(): void {
+    if (!this.playbackService.isPlaying()) {
+      this.saveDirtyPositions();
+    }
+
     this.playbackService.configure(
       this.sortedKeyframes(),
       this.duration(),
