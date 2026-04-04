@@ -203,7 +203,6 @@ export class HandballCourtRenderer {
     const newPixelsPerMeter = newConfig.pixelsPerMeter;
     const scaleFactor = newPixelsPerMeter / oldPixelsPerMeter;
     const courtModeChanged = this.config.halfCourt !== newConfig.halfCourt;
-    console.log('[reinitialize]', { courtModeChanged, oldHalf: this.config.halfCourt, newHalf: newConfig.halfCourt, oldPPM: oldPixelsPerMeter, newPPM: newPixelsPerMeter });
 
     this.config = newConfig;
     this.courtRenderer.setConfig(newConfig);

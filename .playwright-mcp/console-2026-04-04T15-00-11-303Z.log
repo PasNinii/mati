@@ -1,6 +1,0 @@
-[     305ms] [LOG] Angular is running in development mode. @ http://localhost:8103/@fs/home/nini/playground/mati/frontend/.angular/cache/21.2.6/mati/vite/deps/chunk-UJXFFF7P.js?v=0bfcedbb:17572
-[    2494ms] [LOG] [reinitialize] {courtModeChanged: true, oldHalf: true, newHalf: false, oldPPM: 30, newPPM: 30} @ http://localhost:8103/chunk-RD35A34P.js:2456
-[    3414ms] [LOG] [reinitialize] {courtModeChanged: true, oldHalf: false, newHalf: true, oldPPM: 30, newPPM: 30} @ http://localhost:8103/chunk-RD35A34P.js:2456
-[    3546ms] [LOG] [reinitialize] {courtModeChanged: true, oldHalf: true, newHalf: false, oldPPM: 30, newPPM: 30} @ http://localhost:8103/chunk-RD35A34P.js:2456
-[   16009ms] [LOG] [reinitialize] {courtModeChanged: true, oldHalf: false, newHalf: true, oldPPM: 30, newPPM: 30} @ http://localhost:8103/chunk-RD35A34P.js:2456
-[   25289ms] [LOG] [vite] server connection lost. Polling for restart... @ http://localhost:8103/@vite/client:864
