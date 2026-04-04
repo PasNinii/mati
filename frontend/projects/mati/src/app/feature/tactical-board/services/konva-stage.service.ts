@@ -5,6 +5,7 @@ import Konva from 'konva';
 export class KonvaStageService implements OnDestroy {
   private _stage?: Konva.Stage;
   public readonly layer = signal<Konva.Layer>(new Konva.Layer());
+  public readonly overlayLayer = signal<Konva.Layer>(new Konva.Layer({ listening: false }));
 
   get stage(): Konva.Stage | undefined {
     return this._stage;
@@ -21,6 +22,7 @@ export class KonvaStageService implements OnDestroy {
       height,
     });
     this._stage.add(this.layer());
+    this._stage.add(this.overlayLayer());
   }
 
   resize(width: number, height: number): void {

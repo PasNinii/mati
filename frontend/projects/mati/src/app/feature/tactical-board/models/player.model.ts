@@ -100,7 +100,7 @@ export class Player extends MovingEntity {
   /**
    * Gets the appropriate color for this player based on team and role
    */
-  private getColor(): string {
+  getColor(): string {
     if (this.team === Team.HOME) {
       return this.role === PlayerRole.ATTACK
         ? this.styles.homeAttackColor
@@ -110,6 +110,10 @@ export class Player extends MovingEntity {
         ? this.styles.awayAttackColor
         : this.styles.awayDefenseColor;
     }
+  }
+
+  get radius(): number {
+    return this.styles.playerRadius;
   }
 
   /**

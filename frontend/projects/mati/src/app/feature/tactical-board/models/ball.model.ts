@@ -34,6 +34,10 @@ export class Ball extends MovingEntity {
     this.styles = styles;
   }
 
+  get radius(): number {
+    return this.styles.ballRadius;
+  }
+
   /**
    * Creates the Konva shape for the ball
    */
