@@ -1,6 +1,12 @@
-import { Injectable, signal, computed, effect, inject } from '@angular/core';
+import {
+  Injectable,
+  signal,
+  computed,
+  effect,
+  inject,
+  untracked,
+} from '@angular/core';
 import { httpResource } from '@angular/common/http';
-import { toSignal } from '@angular/core/rxjs-interop';
 import { Router, ActivatedRoute, Params } from '@angular/router';
 import {
   FilterGroup,
@@ -49,38 +55,21 @@ export class FilterService {
     () => Object.keys(this.filterState()).length,
   );
 
-  // Router queryParams as a signal — no manual subscription, no memory leak
-  private readonly queryParams = toSignal(this.route.queryParams, {
-    initialValue: {} as Params,
-  });
-
   constructor() {
     // Initialize filters when httpResource resolves
+    // untracked: initializeFilters reads+writes this.filters — must not track it
     effect(() => {
       const groups = this.configResource.value();
       if (groups) {
-        this.initializeFilters(groups);
+        untracked(() => this.initializeFilters(groups));
       }
     });
 
-    // Apply URL params to filters once both are available
-    effect(() => {
-      const params = this.queryParams();
-      const filters = this.filters();
-      if (filters.size === 0) return;
-
-      Object.keys(params).forEach((key) => {
-        const filter = filters.get(key);
-        if (filter) {
-          filter.deserialize(params[key]);
-        }
-      });
-    });
-
-    // Sync filter state back to URL
+    // Sync filter state to URL (one-way: filters → URL)
+    // untracked: updateUrlParams reads this.filters inside — already tracked via filterState
     effect(() => {
       const state = this.filterState();
-      this.updateUrlParams(state);
+      untracked(() => this.updateUrlParams(state));
     });
 
     this.keyboardShortcutService.register('ctrl+a', () => {
@@ -141,6 +130,15 @@ export class FilterService {
         name: group.name,
         filterIds,
       });
+    });
+
+    // Apply URL params before setting the signal to avoid extra change cycles
+    const params = this.route.snapshot.queryParams;
+    Object.keys(params).forEach((key) => {
+      const filter = filterMap.get(key);
+      if (filter) {
+        filter.deserialize(params[key]);
+      }
     });
 
     this.filters.set(filterMap);

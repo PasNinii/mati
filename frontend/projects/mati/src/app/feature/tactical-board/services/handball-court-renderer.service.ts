@@ -193,16 +193,18 @@ export class HandballCourtRenderer {
   }
 
   /**
-   * Reinitializes the court with a new configuration
-   * Uses the unified entity system: all entities (static and moving) update themselves
-   * NO shape destruction or recreation - just geometric updates!
+   * Reinitializes the court with a new configuration.
+   * When halfCourt mode changes, static entities (zones, goals, center line) are
+   * rebuilt since the set of entities differs between modes.
+   * Moving entities (players, ball) are always preserved and rescaled.
    */
   reinitialize(newConfig: CourtConfig, newStyles?: CourtStyles): void {
     const oldPixelsPerMeter = this.config.pixelsPerMeter;
     const newPixelsPerMeter = newConfig.pixelsPerMeter;
     const scaleFactor = newPixelsPerMeter / oldPixelsPerMeter;
+    const courtModeChanged = this.config.halfCourt !== newConfig.halfCourt;
+    console.log('[reinitialize]', { courtModeChanged, oldHalf: this.config.halfCourt, newHalf: newConfig.halfCourt, oldPPM: oldPixelsPerMeter, newPPM: newPixelsPerMeter });
 
-    // Update configuration
     this.config = newConfig;
     this.courtRenderer.setConfig(newConfig);
 
@@ -211,19 +213,42 @@ export class HandballCourtRenderer {
       this.courtRenderer.setStyles(newStyles);
     }
 
-    // Update ALL entities using their updateShape method
-    // This is the unified approach: zones, lines, circles, players, ball all update consistently
-    this.entityManager.getAll().forEach((entity) => {
-      // Update config/styles for static entities
-      if (entity instanceof StaticEntity) {
-        entity.setConfig(newConfig);
-        if (newStyles) {
-          entity.setStyles(newStyles);
-        }
-      }
+    if (courtModeChanged) {
+      // Court mode changed: rebuild static entities, preserve moving entities
+      this.entityManager
+        .getAll()
+        .filter((entity) => entity instanceof StaticEntity)
+        .forEach((entity) => {
+          this.entityManager.remove(entity);
+        });
 
-      // Update shape geometry
-      entity.updateShape(newPixelsPerMeter, scaleFactor);
-    });
+      const courtEntities = this.courtRenderer.createCourtEntities();
+      courtEntities.forEach((entity) => {
+        const shape = entity.createShape({
+          pixelsPerMeter: newPixelsPerMeter,
+        });
+        this.layer.add(shape);
+        this.entityManager.add(entity, shape);
+      });
+
+      // Rescale moving entities and move them above the new static shapes
+      this.entityManager.getAll().forEach((entity) => {
+        if (entity instanceof MovingEntity) {
+          entity.updateShape(newPixelsPerMeter, scaleFactor);
+          entity.getShape()?.moveToTop();
+        }
+      });
+    } else {
+      // Same mode: update all entities in place
+      this.entityManager.getAll().forEach((entity) => {
+        if (entity instanceof StaticEntity) {
+          entity.setConfig(newConfig);
+          if (newStyles) {
+            entity.setStyles(newStyles);
+          }
+        }
+        entity.updateShape(newPixelsPerMeter, scaleFactor);
+      });
+    }
   }
 }

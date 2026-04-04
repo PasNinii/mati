@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { MatDrawer, MatSidenavModule } from '@angular/material/sidenav';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
 
 import { FilterComponent } from '../../pattern/filter';
@@ -17,7 +18,13 @@ import { TacticalBoardStateService } from './services';
 
 @Component({
   selector: 'mati-tactical-board',
-  imports: [MatSidenavModule, MatButtonModule, MatIconModule, FilterComponent],
+  imports: [
+    MatSidenavModule,
+    MatButtonModule,
+    MatIconModule,
+    MatDividerModule,
+    FilterComponent,
+  ],
   providers: [TacticalBoardStateService],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './tactical-board.component.scss',
@@ -50,6 +57,42 @@ import { TacticalBoardStateService } from './services';
             [showClearAll]="false"
             [showShare]="true"
           />
+
+          <mat-divider />
+
+          <div class="shortcuts-section">
+            <h4 class="shortcuts-title">Keyboard Shortcuts</h4>
+            <div class="shortcuts-grid">
+              <div class="shortcut-row">
+                <kbd>Ctrl + D</kbd>
+                <span>Toggle settings</span>
+              </div>
+              <div class="shortcut-row">
+                <kbd>Ctrl + A</kbd>
+                <span>Clear all filters</span>
+              </div>
+              <div class="shortcut-row">
+                <kbd>Ctrl + I</kbd>
+                <span>Zoom in</span>
+              </div>
+              <div class="shortcut-row">
+                <kbd>Ctrl + O</kbd>
+                <span>Zoom out</span>
+              </div>
+              <div class="shortcut-row">
+                <kbd>Ctrl + F</kbd>
+                <span>Toggle full court</span>
+              </div>
+              <div class="shortcut-row">
+                <kbd>Ctrl + C</kbd>
+                <span>Toggle coordinates</span>
+              </div>
+              <div class="shortcut-row">
+                <kbd>Ctrl + B</kbd>
+                <span>Toggle ball</span>
+              </div>
+            </div>
+          </div>
         </div>
       </mat-drawer>
     </mat-drawer-container>

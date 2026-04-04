@@ -57,6 +57,13 @@ export abstract class Entity {
   }
 
   /**
+   * Gets the shape reference
+   */
+  getShape(): Konva.Group | Konva.Shape | undefined {
+    return this.shape;
+  }
+
+  /**
    * Destroys the Konva shape
    */
   destroy(): void {

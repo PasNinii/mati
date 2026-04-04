@@ -25,6 +25,13 @@
           "increment": "ctrl+i",
           "decrement": "ctrl+o"
         }
+      },
+      {
+        "id": "fullCourt",
+        "label": "Full Court",
+        "type": "boolean",
+        "defaultValue": false,
+        "shortcut": "ctrl+f"
       }
     ]
   },

@@ -51,9 +51,13 @@ export class TacticalBoardStateService implements OnDestroy {
     return (filter?.value() as boolean) ?? true;
   });
 
+  public readonly fullCourt = linkedSignal<boolean>(() => {
+    const filter = this.filterService.filters().get('fullCourt');
+    return (filter?.value() as boolean) ?? false;
+  });
+
   // ===== Static configuration =====
   public readonly width = signal(20); // Fixed width in meters
-  public readonly fullCourt = signal(false); // Half court mode by default
 
   // ===== Computed values =====
   public readonly effectiveHeight = computed(() =>
