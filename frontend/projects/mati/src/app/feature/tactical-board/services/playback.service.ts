@@ -17,7 +17,11 @@ export class PlaybackService {
   private duration = 0;
   private pixelsPerMeter = 30;
 
-  configure(keyframes: Keyframe[], duration: number, pixelsPerMeter: number): void {
+  configure(
+    keyframes: Keyframe[],
+    duration: number,
+    pixelsPerMeter: number,
+  ): void {
     this.keyframes = keyframes;
     this.duration = duration;
     this.pixelsPerMeter = pixelsPerMeter;
@@ -34,7 +38,7 @@ export class PlaybackService {
   pause(): void {
     this.isPlaying.set(false);
     if (this.animationId !== null) {
-      cancelAnimationFrame(this.animationId);
+      window.cancelAnimationFrame(this.animationId);
       this.animationId = null;
     }
     this.setDraggable(true);
@@ -51,7 +55,7 @@ export class PlaybackService {
   }
 
   private animate(): void {
-    this.animationId = requestAnimationFrame((timestamp) => {
+    this.animationId = window.requestAnimationFrame((timestamp) => {
       if (!this.isPlaying()) return;
 
       if (this.lastTimestamp === null) {

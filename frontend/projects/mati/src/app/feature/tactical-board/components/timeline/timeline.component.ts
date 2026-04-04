@@ -19,20 +19,10 @@ import { Keyframe } from '../../models/scenario.model';
         {{ formatTime(currentTime()) }} / {{ formatTime(duration()) }}
       </div>
 
-      <div
-        class="track"
-        #track
-        (mousedown)="onTrackClick($event)"
-      >
-        <div
-          class="progress"
-          [style.width.%]="progressPercent()"
-        ></div>
+      <div class="track" #track (mousedown)="onTrackClick($event)">
+        <div class="progress" [style.width.%]="progressPercent()"></div>
 
-        <div
-          class="scrubber"
-          [style.left.%]="progressPercent()"
-        ></div>
+        <div class="scrubber" [style.left.%]="progressPercent()"></div>
 
         @for (kf of keyframes(); track kf.time) {
           <div
@@ -74,7 +64,10 @@ export class TimelineComponent {
     if (!track) return;
 
     const rect = track.getBoundingClientRect();
-    const percent = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+    const percent = Math.max(
+      0,
+      Math.min(1, (event.clientX - rect.left) / rect.width),
+    );
     const time = parseFloat((percent * this.duration()).toFixed(1));
     this.timeChange.emit(time);
   }

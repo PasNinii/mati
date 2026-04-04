@@ -11,8 +11,7 @@ export const routes: Routes = [
   {
     path: 'studio',
     title: 'Studio',
-    loadChildren: () =>
-      import('./feature/tactical-board/studio.routes'),
+    loadChildren: () => import('./feature/tactical-board/studio.routes'),
   },
   { path: '**', redirectTo: '' },
 ];

@@ -294,11 +294,11 @@ export class StudioStateService implements OnDestroy {
       this.selectionService.selectedIds().forEach((id) => {
         const entity = this.entityManager.getById(id);
         if (entity instanceof MovingEntity) {
-          const shape = entity.getShape();
+          const shape = entity.getShape() as Konva.Group | undefined;
           if (shape) {
             this.dragStartPositions.set(id, {
-              x: shape.getAttr('x') as number,
-              y: shape.getAttr('y') as number,
+              x: shape.x(),
+              y: shape.y(),
             });
           }
         }
