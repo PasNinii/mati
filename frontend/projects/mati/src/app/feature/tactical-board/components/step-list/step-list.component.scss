@@ -1,26 +1,10 @@
 .step-list {
   display: flex;
-  flex-direction: row;
   align-items: center;
   overflow-x: auto;
-  gap: 0;
   padding: 8px 12px;
   min-height: 64px;
   scrollbar-width: thin;
-  scrollbar-color: var(--mat-sys-outline-variant) transparent;
-
-  &::-webkit-scrollbar {
-    height: 4px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: var(--mat-sys-outline-variant);
-    border-radius: 2px;
-  }
 }
 
 .step-card {
@@ -81,16 +65,6 @@
   line-height: 1;
 }
 
-.active .step-count {
-  color: var(--mat-sys-on-primary-container);
-  opacity: 0.8;
-}
-
-.add-icon {
-  font-size: 1.2rem;
-  line-height: 1;
-}
-
 .gap-control {
   display: inline-flex;
   align-items: center;
@@ -109,13 +83,6 @@
   font-size: 0.7rem;
   text-align: center;
   appearance: textfield;
-  -moz-appearance: textfield;
-
-  &::-webkit-outer-spin-button,
-  &::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-  }
 
   &:focus {
     outline: none;

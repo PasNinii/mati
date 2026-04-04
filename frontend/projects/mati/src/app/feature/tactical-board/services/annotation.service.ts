@@ -75,7 +75,7 @@ export class AnnotationService {
     if (dist < 10) return null;
 
     return {
-      id: crypto.randomUUID(),
+      id: window.crypto.randomUUID(),
       type: 'arrow',
       points: [this.drawStart.x, this.drawStart.y, pos.x, pos.y],
       color: '#FF9800',
