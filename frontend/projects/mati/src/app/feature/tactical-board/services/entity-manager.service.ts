@@ -1,3 +1,4 @@
+import { Injectable } from '@angular/core';
 import Konva from 'konva';
 import { Entity } from '../models/entity.model';
 import { Player } from '../models/player.model';
@@ -11,6 +12,7 @@ import { Ball } from '../models/ball.model';
  * - Query entities by type
  * - Clear all entities
  */
+@Injectable()
 export class EntityManager {
   private entities: Map<string, Entity> = new Map();
 
@@ -29,6 +31,13 @@ export class EntityManager {
     if (this.entities.delete(entity.id)) {
       entity.destroy();
     }
+  }
+
+  /**
+   * Gets an entity by its id
+   */
+  getById(id: string): Entity | undefined {
+    return this.entities.get(id);
   }
 
   /**

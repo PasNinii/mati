@@ -34,6 +34,10 @@ export class Ball extends MovingEntity {
     this.styles = styles;
   }
 
+  get radius(): number {
+    return this.styles.ballRadius;
+  }
+
   /**
    * Creates the Konva shape for the ball
    */
@@ -42,6 +46,7 @@ export class Ball extends MovingEntity {
     showCoordinates: boolean;
   }): Konva.Group {
     const group = new Konva.Group({
+      name: this.id,
       x: this.coordinates.x,
       y: this.coordinates.y,
       draggable: this.draggable,

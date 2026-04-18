@@ -4,20 +4,15 @@ import {
   Player,
   Team,
   PlayerRole,
-  AttackPosition,
-  DEFAULT_ATTACK_POSITIONS,
-  DEFAULT_DEFENSE_POSITIONS,
+  PlayerPosition,
   DEFAULT_PLAYER_STYLES,
-  PlayerStyles,
 } from '../models/player.model';
-import { Ball, DEFAULT_BALL_STYLES, BallStyles } from '../models/ball.model';
+import { Ball, DEFAULT_BALL_STYLES } from '../models/ball.model';
 import { MovingEntity } from '../models/moving-entity.model';
 import { StaticEntity } from '../models/static-entity.model';
 import { EntityManager } from './entity-manager.service';
 import { CourtRenderer } from './court-renderer.service';
-
-// Re-export styles for backward compatibility
-export { DEFAULT_PLAYER_STYLES, PlayerStyles, DEFAULT_BALL_STYLES, BallStyles };
+import { EntityDefinition } from '../models/scenario.model';
 
 /**
  * Orchestrates handball court rendering and entity management
@@ -28,22 +23,20 @@ export { DEFAULT_PLAYER_STYLES, PlayerStyles, DEFAULT_BALL_STYLES, BallStyles };
  * - Handle configuration changes with minimal redraws
  */
 export class HandballCourtRenderer {
-  private entityManager: EntityManager;
   private courtRenderer: CourtRenderer;
   private showCoordinates: boolean = false;
 
   constructor(
     private layer: Konva.Layer,
+    private entityManager: EntityManager,
     private config: CourtConfig,
     private styles: CourtStyles,
   ) {
-    this.entityManager = new EntityManager();
     this.courtRenderer = new CourtRenderer(config, styles);
   }
 
   /**
    * Renders the complete handball court (creates and adds all static court entities)
-   * Call initializeDefaultPlayers() after this to add moving entities
    */
   render(): void {
     // Create and add static court entities (background, zones, lines, circles)
@@ -58,69 +51,49 @@ export class HandballCourtRenderer {
   }
 
   /**
-   * Initialize default players (6 players per team in attack and defense)
-   * Optimized: All entities created, then single draw
+   * Loads a formation from entity definitions and positions
    */
-  initializeDefaultPlayers(): void {
-    const pixelsPerMeter = this.config.pixelsPerMeter;
-    const entities: (Player | Ball)[] = [];
+  loadFormation(
+    entities: EntityDefinition[],
+    positions: Record<string, { x: number; y: number }>,
+  ): void {
+    const ppm = this.config.pixelsPerMeter;
 
-    // Create home team attack players
-    Object.entries(DEFAULT_ATTACK_POSITIONS).forEach(([position, coords]) => {
-      entities.push(
-        new Player(
-          Team.HOME,
-          PlayerRole.ATTACK,
-          position as AttackPosition,
-          {
-            x: coords.xMeters * pixelsPerMeter,
-            y: coords.yMeters * pixelsPerMeter,
-          },
+    entities.forEach((def) => {
+      const pos = positions[def.id];
+      if (!pos) return;
+
+      const coords = { x: pos.x * ppm, y: pos.y * ppm };
+
+      let entity: MovingEntity;
+      if (def.type === 'ball') {
+        entity = new Ball(coords, true, DEFAULT_BALL_STYLES);
+      } else {
+        entity = new Player(
+          def.id,
+          (def.team as Team) ?? Team.HOME,
+          (def.role as PlayerRole) ?? PlayerRole.ATTACK,
+          (def.position as PlayerPosition) ?? 'CB',
+          coords,
           true,
           DEFAULT_PLAYER_STYLES,
-        ),
-      );
-    });
+        );
+      }
 
-    // Create away team defense players
-    DEFAULT_DEFENSE_POSITIONS.forEach((posData) => {
-      entities.push(
-        new Player(
-          Team.AWAY,
-          PlayerRole.DEFENSE,
-          posData.position,
-          {
-            x: posData.xMeters * pixelsPerMeter,
-            y: posData.yMeters * pixelsPerMeter,
-          },
-          true,
-          DEFAULT_PLAYER_STYLES,
-        ),
-      );
-    });
-
-    // Create ball at CB position
-    const cbPosition = DEFAULT_ATTACK_POSITIONS[AttackPosition.CB];
-    entities.push(
-      new Ball(
-        {
-          x: cbPosition.xMeters * pixelsPerMeter,
-          y: cbPosition.yMeters * pixelsPerMeter,
-        },
-        true,
-        DEFAULT_BALL_STYLES,
-      ),
-    );
-
-    // Batch add all entities
-    entities.forEach((entity) => {
       const shape = entity.createShape({
-        pixelsPerMeter: this.config.pixelsPerMeter,
+        pixelsPerMeter: ppm,
         showCoordinates: this.showCoordinates,
       });
       this.layer.add(shape);
       this.entityManager.add(entity, shape);
     });
+  }
+
+  /**
+   * Returns the current court config
+   */
+  getConfig(): CourtConfig {
+    return this.config;
   }
 
   /**
@@ -154,6 +127,7 @@ export class HandballCourtRenderer {
       }
     });
   }
+
   /**
    * Adds the ball to the court at a specific position
    */

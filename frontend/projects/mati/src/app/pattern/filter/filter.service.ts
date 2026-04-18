@@ -28,7 +28,9 @@ export class FilterService {
   private readonly configPath = signal<string | undefined>(undefined);
 
   // Signal-based HTTP resource replaces HttpClient + RxJS pipe
-  readonly configResource = httpResource<FilterGroup[]>(() => this.configPath());
+  readonly configResource = httpResource<FilterGroup[]>(() =>
+    this.configPath(),
+  );
 
   // Filters map - centralized source of truth containing all filter instances
   public readonly filters = signal<Map<string, BaseFilter>>(new Map());
