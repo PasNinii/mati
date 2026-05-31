@@ -9,12 +9,14 @@ Tactical handball board web app for coaches. Frontend-only Angular application. 
 ## Commands
 
 ```bash
-npm start          # dev server at http://localhost:8103
-npm test           # Karma + Jasmine tests
-npm run lint       # ESLint
-npm run ci         # lint → test → build (full pipeline)
-npm run format:write  # Prettier auto-format
+pnpm start          # dev server at http://localhost:8103
+pnpm test           # Karma + Jasmine tests
+pnpm lint           # ESLint
+pnpm ci             # lint → test → build (full pipeline)
+pnpm format:write   # Prettier auto-format
 ```
+
+Package manager is **pnpm** (build scripts allowlisted in `frontend/pnpm-workspace.yaml`).
 
 ## Architecture
 

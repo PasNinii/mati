@@ -10,6 +10,7 @@
     "ci": "ng lint && ng test && ng build",
     "format:test": "prettier --list-different \"./projects/**/*.{ts,html,scss,json}\"",
     "format:write": "prettier --write \"./projects/**/*.{ts,html,scss,json}\"",
+    "prepare": "cd .. && husky frontend/.husky",
     "analyze": "ng build --stats-json --output-hashing=none --named-chunks && esbuild-visualizer --template treemap --metadata dist/mati/stats.json --filename dist/mati/analyse/index.html  && http-server -o -c-1 ./dist/mati/analyse/",
     "analyze:sme": "ng build --source-map --output-hashing=none --named-chunks && source-map-explorer dist/mati/browser/*.js --html dist/mati/sme/index.html && http-server -o -c-1 ./dist/mati/sme/",
     "analyze:deps": "npm-run-all analyze:deps:*",
@@ -21,6 +22,10 @@
     "analyze:deps:core": "madge  --extensions ts --ts-config tsconfig.json --image ./deps/mati/core.png projects/mati/src/app/core/"
   },
   "private": true,
+  "lint-staged": {
+    "*.{ts,html}": "eslint --fix",
+    "*.{ts,html,scss,json,md}": "prettier --write"
+  },
   "dependencies": {
     "@angular/animations": "^21.2.7",
     "@angular/cdk": "^21.2.5",
@@ -55,6 +60,8 @@
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-boundaries": "^6.0.2",
     "http-server": "^14.1.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.0",
     "jasmine-core": "~6.1.0",
     "karma": "~6.4.4",
     "karma-chrome-launcher": "~3.2.0",
